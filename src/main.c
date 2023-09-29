@@ -41,6 +41,17 @@ void enableRawMode() {
      * It turns out that the terminal is helpfully translating any carriage returns (13, '\r') inputted by the user into newlines (10, '\n').
     */
     raw.c_iflag &= ~(ICRNL | IXON);
+    
+    /**
+     * `c_oflag`
+     * The c_oflag field is for “output flags”.
+     * 
+     * `OPOST`
+     * The OPOST flag is for “output processing”.
+     * It translates '\n' to '\r\n' on output.
+     * We’ll fix this later, but for now, we can just turn off output processing altogether.
+    */
+    raw.c_oflag &= ~(OPOST);
 
     /**
      * `c_lflag`
