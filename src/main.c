@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
@@ -6,8 +7,13 @@
 
 struct termios orig_termios;
 
+void die(const char *s) {
+    perror(s); // print error message. perror() looks at the global errno variable and prints a descriptive error message for it.
+    exit(1); 
+}
+
 void disableRawMode() {
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcsetattr");
 }
 
 /**
@@ -19,7 +25,7 @@ void disableRawMode() {
  * We’ll fix this whole problem in the next step.
 */
 void enableRawMode() {
-    tcgetattr(STDIN_FILENO, &orig_termios); // get terminal attributes
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr"); // get terminal attributes
     atexit(disableRawMode); // disable raw mode at exit
 
     struct termios raw = orig_termios; // copy terminal attributes
@@ -102,7 +108,7 @@ void enableRawMode() {
     raw.c_cc[VMIN] = 0; // minimum number of bytes of input needed before read() can return
     raw.c_cc[VTIME] = 1; // maximum amount of time to wait before read() returns
 
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // set terminal attributes
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr"); // set terminal attributes
 }
 
 int main() {
@@ -110,7 +116,7 @@ int main() {
     
     while (1) {
         char c = '\0'; // initialize to null byte
-        read(STDIN_FILENO, &c, 1); // read 1 byte from stdin into c
+        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die ("read"); // read 1 byte from stdin into c. Cygwin returns -1 when there is no input available, so we have to check errno to make sure it’s not actually an error.
         /**
          * `iscntrl`
          * iscntrl() checks whether c is a control character.
