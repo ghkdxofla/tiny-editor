@@ -120,26 +120,61 @@ void enableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr"); // set terminal attributes
 }
 
+/**
+ * editorReadKey()
+ * waits for one keypress and returns it.
+*/
+char editorReadKey() {
+    int nread;
+    char c;
+    while ((nread = read(STDIN_FILENO, &c, 1)) != 1) { // read 1 byte from stdin into c
+        /**
+         * read() returns the number of bytes read, or -1 on error, in which case errno is set appropriately. 
+         * Cygwin returns -1 when there is no input available, so we have to check errno to make sure it’s not actually an error.
+        */
+        if (nread == -1 && errno != EAGAIN) die("read");
+    }
+
+    return c;
+}
+
+/*** input ***/
+
+/**
+ * editorProcessKeypress()
+ * waits for a keypress and handles it.
+*/
+void editorProcessKeypress() {
+    char c = editorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'): // quit on 'q'
+            exit(0);
+            break;
+    }
+}
+
 /*** init ***/
 
 int main() {
     enableRawMode();
-    
+
     while (1) {
-        char c = '\0'; // initialize to null byte
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die ("read"); // read 1 byte from stdin into c. Cygwin returns -1 when there is no input available, so we have to check errno to make sure it’s not actually an error.
-        /**
-         * `iscntrl`
-         * iscntrl() checks whether c is a control character.
-         * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
-         * ASCII codes 32–126 are all printable.
-        */
-        if (iscntrl(c)) { // is control character
-            printf("%d\r\n", c);
-        } else {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        if (c == CTRL_KEY('q')) break; // quit on 'q'
+        editorProcessKeypress();
     }
+    
+    // while (1) {
+    //     /**
+    //      * `iscntrl`
+    //      * iscntrl() checks whether c is a control character.
+    //      * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
+    //      * ASCII codes 32–126 are all printable.
+    //     */
+    //     if (iscntrl(c)) { // is control character
+    //         printf("%d\r\n", c);
+    //     } else {
+    //         printf("%d ('%c')\r\n", c, c);
+    //     }
+    // }
     return 0;
 }
