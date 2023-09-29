@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
@@ -51,6 +53,18 @@ int main() {
     enableRawMode();
     
     char c;
-    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q');
+    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+        /**
+         * `iscntrl`
+         * iscntrl() checks whether c is a control character.
+         * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
+         * ASCII codes 32–126 are all printable.
+        */
+        if (iscntrl(c)) { // is control character
+            printf("%d\n", c);
+        } else {
+            printf("%d ('%c')\n", c, c);
+        }
+    }
     return 0;
 }
