@@ -99,14 +99,18 @@ void enableRawMode() {
     */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG); // disable echoing of input
 
+    raw.c_cc[VMIN] = 0; // minimum number of bytes of input needed before read() can return
+    raw.c_cc[VTIME] = 1; // maximum amount of time to wait before read() returns
+
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // set terminal attributes
 }
 
 int main() {
     enableRawMode();
     
-    char c;
-    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+    while (1) {
+        char c = '\0'; // initialize to null byte
+        read(STDIN_FILENO, &c, 1); // read 1 byte from stdin into c
         /**
          * `iscntrl`
          * iscntrl() checks whether c is a control character.
@@ -118,6 +122,7 @@ int main() {
         } else {
             printf("%d ('%c')\r\n", c, c);
         }
+        if (c == 'q') break; // quit on 'q'
     }
     return 0;
 }
