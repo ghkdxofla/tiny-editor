@@ -46,10 +46,13 @@ void enableRawMode() {
      * However, ICANON is not an input flag, it’s a “local” flag in the c_lflag field. 
      * So that’s confusing.
      * 
+     * `IEXTEN`
+     * IEXTEN is a flag that will allow us to disable Ctrl-V.
+     * 
      * `ISIG`
      * ISIG is a flag that allows us to turn off Ctrl-C and Ctrl-Z signals.
     */
-    raw.c_lflag &= ~(ECHO | ICANON | ISIG); // disable echoing of input
+    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG); // disable echoing of input
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // set terminal attributes
 }
