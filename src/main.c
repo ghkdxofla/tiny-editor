@@ -33,8 +33,14 @@ void enableRawMode() {
      * `ECHO`
      * ECHO is a bitflag, defined as 00000000000000000000000000001000 in binary. 
      * We use the bitwise-NOT operator (~) on this value to get 11111111111111111111111111110111.
+     * 
+     * `ICANON`
+     * ICANON comes from <termios.h>. 
+     * Input flags (the ones in the c_iflag field) generally start with I like ICANON does. 
+     * However, ICANON is not an input flag, it’s a “local” flag in the c_lflag field. 
+     * So that’s confusing.
     */
-    raw.c_lflag &= ~(ECHO); // disable echoing of input
+    raw.c_lflag &= ~(ECHO | ICANON); // disable echoing of input
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // set terminal attributes
 }
