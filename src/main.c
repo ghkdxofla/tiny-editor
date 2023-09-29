@@ -35,6 +35,8 @@ void enableRawMode() {
      * We use the bitwise-NOT operator (~) on this value to get 11111111111111111111111111110111.
      * 
      * `ICANON`
+     * There is an ICANON flag that allows us to turn off canonical mode. 
+     * This means we will finally be reading input byte-by-byte, instead of line-by-line.
      * ICANON comes from <termios.h>. 
      * Input flags (the ones in the c_iflag field) generally start with I like ICANON does. 
      * However, ICANON is not an input flag, it’s a “local” flag in the c_lflag field. 
