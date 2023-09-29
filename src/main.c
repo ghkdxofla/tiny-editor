@@ -24,7 +24,23 @@ void enableRawMode() {
 
     struct termios raw = orig_termios; // copy terminal attributes
 
-    raw.c_iflag &= ~(IXON); // disable Ctrl-S and Ctrl-Q
+    /**
+     * `c_iflag`
+     * The c_iflag field is for “input flags”.
+     * 
+     * `ICRNL`
+     * The ICRNL flag fixes Ctrl-M.
+     * 
+     * `IXON`
+     * The IXON flag fixes Ctrl-S and Ctrl-Q.
+     * If you run the program now and go through the whole alphabet while holding down Ctrl, 
+     * you should see that we have every letter except M. 
+     * Ctrl-M is weird: it’s being read as 10, when we expect it to be read as 13, 
+     * since it is the 13th letter of the alphabet, and Ctrl-J already produces a 10. 
+     * What else produces 10? The Enter key does.
+     * It turns out that the terminal is helpfully translating any carriage returns (13, '\r') inputted by the user into newlines (10, '\n').
+    */
+    raw.c_iflag &= ~(ICRNL | IXON);
 
     /**
      * `c_lflag`
