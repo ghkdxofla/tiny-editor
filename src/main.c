@@ -96,9 +96,9 @@ int main() {
          * ASCII codes 32–126 are all printable.
         */
         if (iscntrl(c)) { // is control character
-            printf("%d\n", c);
+            printf("%d\r\n", c);
         } else {
-            printf("%d ('%c')\n", c, c);
+            printf("%d ('%c')\r\n", c, c);
         }
     }
     return 0;
