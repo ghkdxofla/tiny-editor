@@ -1,10 +1,26 @@
+#include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 
-void enableRawMode() {
-    struct termios raw; // struct for storing terminal attributes
+struct termios orig_termios;
 
-    tcgetattr(STDIN_FILENO, &raw); // get terminal attributes
+void disableRawMode() {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+/**
+ * After the program quits, depending on your shell, you may find your terminal is still not echoing what you type. 
+ * Don’t worry, it will still listen to what you type. 
+ * Just press Ctrl-C to start a fresh line of input to your shell, and type in reset and press Enter. 
+ * This resets your terminal back to normal in most cases. 
+ * Failing that, you can always restart your terminal emulator. 
+ * We’ll fix this whole problem in the next step.
+*/
+void enableRawMode() {
+    tcgetattr(STDIN_FILENO, &orig_termios); // get terminal attributes
+    atexit(disableRawMode); // disable raw mode at exit
+
+    struct termios raw = orig_termios; // copy terminal attributes
 
     /**
      * `c_lflag`
