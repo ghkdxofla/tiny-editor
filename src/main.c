@@ -28,8 +28,17 @@ void enableRawMode() {
      * `c_iflag`
      * The c_iflag field is for “input flags”.
      * 
+     * `BRKINT`
+     * The BRKINT flag will cause a break condition to cause a SIGINT signal to be sent to the program, like pressing Ctrl-C.
+     * 
      * `ICRNL`
      * The ICRNL flag fixes Ctrl-M.
+     * 
+     * `INPCK`
+     * The INPCK flag enables parity checking, which doesn’t seem to apply to modern terminal emulators.
+     * 
+     * `ISTRIP`
+     * The ISTRIP flag causes the 8th bit of each input byte to be stripped, meaning it will set it to 0.
      * 
      * `IXON`
      * The IXON flag fixes Ctrl-S and Ctrl-Q.
@@ -40,7 +49,7 @@ void enableRawMode() {
      * What else produces 10? The Enter key does.
      * It turns out that the terminal is helpfully translating any carriage returns (13, '\r') inputted by the user into newlines (10, '\n').
     */
-    raw.c_iflag &= ~(ICRNL | IXON);
+    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     
     /**
      * `c_oflag`
@@ -52,6 +61,15 @@ void enableRawMode() {
      * We’ll fix this later, but for now, we can just turn off output processing altogether.
     */
     raw.c_oflag &= ~(OPOST);
+
+    /**
+     * `c_cflag`
+     * The c_cflag field is for “control flags”.
+     * 
+     * `CS8`
+     * The CS8 flag sets the character size (CS) to 8 bits per byte.
+    */
+    raw.c_cflag |= (CS8);
 
     /**
      * `c_lflag`
