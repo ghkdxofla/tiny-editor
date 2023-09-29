@@ -1,5 +1,16 @@
 # tiny-editor
 
+## Compile
+```bash
+cd src
+make
+```
+
+## Run
+```bash
+./tiny
+```
+
 ## Reference
 - [rurumimic's editor](https://github.com/rurumimic/editor)
 - [kilo's github](https://github.com/antirez/kilo)
