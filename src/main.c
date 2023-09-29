@@ -43,8 +43,11 @@ void enableRawMode() {
      * Input flags (the ones in the c_iflag field) generally start with I like ICANON does. 
      * However, ICANON is not an input flag, it’s a “local” flag in the c_lflag field. 
      * So that’s confusing.
+     * 
+     * `ISIG`
+     * ISIG is a flag that allows us to turn off Ctrl-C and Ctrl-Z signals.
     */
-    raw.c_lflag &= ~(ECHO | ICANON); // disable echoing of input
+    raw.c_lflag &= ~(ECHO | ICANON | ISIG); // disable echoing of input
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // set terminal attributes
 }
