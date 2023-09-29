@@ -24,6 +24,8 @@ void enableRawMode() {
 
     struct termios raw = orig_termios; // copy terminal attributes
 
+    raw.c_iflag &= ~(IXON); // disable Ctrl-S and Ctrl-Q
+
     /**
      * `c_lflag`
      * The c_lflag field is for “local flags”. 
