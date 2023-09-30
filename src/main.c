@@ -138,6 +138,30 @@ char editorReadKey() {
     return c;
 }
 
+/*** output ***/
+
+/**
+ * editorRefreshScreen()
+ * clears the screen and draws each row of the buffer to the screen.
+ * 
+ * `write()`
+ * write() writes up to count bytes from the buffer pointed buf to the file referred to by the file descriptor fd.
+ * 
+ * `STDOUT_FILENO`
+ * The file descriptor for standard output is 1, so that’s what we pass to write() to write to standard output.
+ * 
+ * `"\x1b[2J"`
+ * The escape sequence \x1b[2J is a VT100 escape sequence that clears the screen.
+ * The 4 in our write() call means we are writing 4 bytes out to the terminal.
+ * The first byte is \x1b, which is the escape character, or 27 in decimal.
+ * (Try and remember \x1b, we will be using it a lot.) The other three bytes are [2J.
+ * Escape sequences always start with an escape character (27) followed by a [ character.
+ * J command (Erase In Display) to clear the screen.
+*/
+void editorRefreshScreen() {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+}
+
 /*** input ***/
 
 /**
@@ -160,6 +184,7 @@ int main() {
     enableRawMode();
 
     while (1) {
+        editorRefreshScreen();
         editorProcessKeypress();
     }
     
