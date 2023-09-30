@@ -12,7 +12,11 @@
 
 /*** data ***/
 
-struct termios orig_termios;
+struct editorConfig {
+    struct termios orig_termios;
+};
+
+struct editorConfig E;
 
 /*** terminal ***/
 
@@ -24,7 +28,7 @@ void die(const char *s) {
 }
 
 void disableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcsetattr");
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1) die("tcsetattr");
 }
 
 /**
@@ -36,10 +40,10 @@ void disableRawMode() {
  * We’ll fix this whole problem in the next step.
 */
 void enableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr"); // get terminal attributes
+    if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr"); // get terminal attributes
     atexit(disableRawMode); // disable raw mode at exit
 
-    struct termios raw = orig_termios; // copy terminal attributes
+    struct termios raw = E.orig_termios; // copy terminal attributes
 
     /**
      * `c_iflag`
