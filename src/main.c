@@ -17,6 +17,8 @@ struct termios orig_termios;
 /*** terminal ***/
 
 void die(const char *s) {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
     perror(s); // print error message. perror() looks at the global errno variable and prints a descriptive error message for it.
     exit(1); 
 }
@@ -179,6 +181,8 @@ void editorProcessKeypress() {
 
     switch (c) {
         case CTRL_KEY('q'): // quit on 'q'
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
             break;
     }
