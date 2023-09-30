@@ -164,8 +164,17 @@ int getCursorPosition(int *rows, int *cols) {
     }
     buf[i] = '\0'; // null terminate buf
 
-    printf("\r\n&buf[1]: '%s'\r\n", &buf[1]); // print buf[1] to end of buf
-    // printf("\r\n");
+    if (buf[0] != '\x1b' || buf[1] != '[') return -1; // check if buf starts with '\x1b['
+    
+    /**
+     * `sscanf()`
+     * sscanf() reads data from the string buf and stores them according to the parameter format into the locations given by the additional argument.
+     * 
+     * `"%d;%d"`
+     * %d is for integers. to parse two integers separated by a ;, and put the values into the rows and cols variables.
+    */
+    if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) return -1; // parse buf[2] as int and store in rows and cols
+
     // char c;
 
     // while (read(STDIN_FILENO, &c, 1) == 1) { // read 1 byte from stdin into c
@@ -181,10 +190,6 @@ int getCursorPosition(int *rows, int *cols) {
     //         printf("%d ('%c')\r\n", c, c);
     //     }
     // }
-
-    editorReadKey();
-
-    return -1;
 }
 
 /**
@@ -208,7 +213,7 @@ int getCursorPosition(int *rows, int *cols) {
 int getWindowSize(int *rows, int *cols) {
     struct winsize ws;
 
-    if (1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) { // get window size. 1 is for testing
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) { // get window size.
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
         // editorReadKey(); // for debugging that we can observe the results of our escape sequences before the program calls die() and clears the screen
         return getCursorPosition(rows, cols);
