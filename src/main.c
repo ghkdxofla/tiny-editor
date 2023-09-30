@@ -147,21 +147,60 @@ char editorReadKey() {
     return c;
 }
 
+int getCursorPosition(int *rows, int *cols) {
+    /**
+     * `\x1b[6n`
+     * The escape sequence \x1b[6n reports the cursor position to the program as a series of characters.
+    */
+    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1; // write 4 bytes to stdout
+
+    printf("\r\n");
+    char c;
+
+    while (read(STDIN_FILENO, &c, 1) == 1) { // read 1 byte from stdin into c
+        /**
+         * `iscntrl`
+         * iscntrl() checks whether c is a control character.
+         * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
+         * ASCII codes 32–126 are all printable.
+        */
+        if (iscntrl(c)) { // is control character
+            printf("%d\r\n", c);
+        } else {
+            printf("%d ('%c')\r\n", c, c);
+        }
+    }
+
+    editorReadKey();
+
+    return -1;
+}
+
 /**
  * getWindowSize()
  * uses the TIOCGWINSZ ioctl to get the size of the terminal window.
+ * 
+ * The C command (Cursor Forward) moves the cursor to the right,
+ * and the B command (Cursor Down) moves the cursor down.
+ * The argument says how much to move it right or down by.
+ * We use a very large value, 999,
+ * which should ensure that the cursor reaches the right and bottom edges of the screen.
  * 
  * `ioctl()`
  * The ioctl() function manipulates the underlying device parameters of special files.
  * 
  * `TIOCGWINSZ`
  * TIOCGWINSZ is an I/O control request that gets the window size of the terminal.
+ * 
+ * 
 */
 int getWindowSize(int *rows, int *cols) {
     struct winsize ws;
 
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) { // get window size
-        return -1;
+    if (1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) { // get window size. 1 is for testing
+        if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
+        // editorReadKey(); // for debugging that we can observe the results of our escape sequences before the program calls die() and clears the screen
+        return getCursorPosition(rows, cols);
     } else {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
@@ -243,18 +282,5 @@ int main() {
         editorProcessKeypress();
     }
     
-    // while (1) {
-    //     /**
-    //      * `iscntrl`
-    //      * iscntrl() checks whether c is a control character.
-    //      * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
-    //      * ASCII codes 32–126 are all printable.
-    //     */
-    //     if (iscntrl(c)) { // is control character
-    //         printf("%d\r\n", c);
-    //     } else {
-    //         printf("%d ('%c')\r\n", c, c);
-    //     }
-    // }
     return 0;
 }
