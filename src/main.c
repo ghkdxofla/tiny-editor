@@ -148,28 +148,39 @@ char editorReadKey() {
 }
 
 int getCursorPosition(int *rows, int *cols) {
+    char buf[32];
+    unsigned int i = 0;
+
     /**
      * `\x1b[6n`
      * The escape sequence \x1b[6n reports the cursor position to the program as a series of characters.
     */
     if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1; // write 4 bytes to stdout
 
-    printf("\r\n");
-    char c;
-
-    while (read(STDIN_FILENO, &c, 1) == 1) { // read 1 byte from stdin into c
-        /**
-         * `iscntrl`
-         * iscntrl() checks whether c is a control character.
-         * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
-         * ASCII codes 32–126 are all printable.
-        */
-        if (iscntrl(c)) { // is control character
-            printf("%d\r\n", c);
-        } else {
-            printf("%d ('%c')\r\n", c, c);
-        }
+    while (i < sizeof(buf) - 1) {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) break; // read 1 byte from stdin into buf[i]
+        if (buf[i] == 'R') break; // stop reading if we encounter 'R'
+        i++;
     }
+    buf[i] = '\0'; // null terminate buf
+
+    printf("\r\n&buf[1]: '%s'\r\n", &buf[1]); // print buf[1] to end of buf
+    // printf("\r\n");
+    // char c;
+
+    // while (read(STDIN_FILENO, &c, 1) == 1) { // read 1 byte from stdin into c
+    //     /**
+    //      * `iscntrl`
+    //      * iscntrl() checks whether c is a control character.
+    //      * ASCII codes 0–31 are all control characters, and 127 is also a control character. 
+    //      * ASCII codes 32–126 are all printable.
+    //     */
+    //     if (iscntrl(c)) { // is control character
+    //         printf("%d\r\n", c);
+    //     } else {
+    //         printf("%d ('%c')\r\n", c, c);
+    //     }
+    // }
 
     editorReadKey();
 
