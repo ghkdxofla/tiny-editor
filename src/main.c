@@ -142,6 +142,13 @@ char editorReadKey() {
 
 /*** output ***/
 
+void editorDrawRows() { // draw each row of the buffer to the screen
+    int y;
+    for (y = 0; y < 24; y++) {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
 /**
  * editorRefreshScreen()
  * clears the screen and draws each row of the buffer to the screen.
@@ -167,6 +174,10 @@ char editorReadKey() {
 */
 void editorRefreshScreen() {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
+    editorDrawRows();
+
     write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
