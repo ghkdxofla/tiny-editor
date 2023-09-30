@@ -157,9 +157,15 @@ char editorReadKey() {
  * (Try and remember \x1b, we will be using it a lot.) The other three bytes are [2J.
  * Escape sequences always start with an escape character (27) followed by a [ character.
  * J command (Erase In Display) to clear the screen.
+ * 
+ * `"\x1b[H"`
+ * The escape sequence \x1b[H positions the cursor at row 1, column 1.
+ * if you have an 80×24 size terminal and you want the cursor in the center of the screen,
+ * you could use the command <esc>[12;40H.
 */
 void editorRefreshScreen() {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /*** input ***/
