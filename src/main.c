@@ -261,6 +261,14 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
     for (y = 0; y < E.screenrows; y++) {
         abAppend(ab, "~", 1);
 
+        /**
+         * `\x1b[K`
+         * The escape sequence \x1b[K is a VT100 escape sequence that erases the current line the cursor is on.
+         * 2 erases the whole line.
+         * 1 erases from the start of the line to the cursor.
+         * 0(default) erases from the cursor to the end of the line.
+        */
+        abAppend(ab, "\x1b[K", 3); // clear line (K; Erase In Line)
         if (y < E.screenrows - 1) {
             abAppend(ab, "\r\n", 2);
         }
@@ -301,7 +309,7 @@ void editorRefreshScreen() {
      * which isn’t a big deal in this case.
     */
     abAppend(&ab, "\x1b[?25l", 6); // hide cursor(l; Reset Mode)
-    abAppend(&ab, "\x1b[2J", 4); // clear screen
+    // abAppend(&ab, "\x1b[2J", 4); // clear screen
     abAppend(&ab, "\x1b[H", 3); // reposition cursor
 
     editorDrawRows(&ab);
