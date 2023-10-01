@@ -10,6 +10,8 @@
 #include <unistd.h>
 
 /*** defines ***/
+#define TINY_VERSION "0.0.1"
+
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
 /*** data ***/
@@ -259,7 +261,25 @@ void abFree(struct abuf *ab) {
 void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        abAppend(ab, "~", 1);
+        if (y == E.screenrows / 3) {
+            char welcome[80];
+            int welcomelen = snprintf( // snprintf() returns the number of bytes that would have been written if the buffer had been large enough.
+                welcome, 
+                sizeof(welcome), 
+                "TINY editor -- version %s", 
+                TINY_VERSION
+            );
+            if (welcomelen > E.screencols) welcomelen = E.screencols; // truncate welcome message if it is too long
+            int padding = (E.screencols - welcomelen) / 2; // center welcome message
+            if (padding) {
+                abAppend(ab, "~", 1);
+                padding--;
+            }
+            while (padding--) abAppend(ab, " ", 1);
+            abAppend(ab, welcome, welcomelen);
+        } else {
+            abAppend(ab, "~", 1);
+        }
 
         /**
          * `\x1b[K`
