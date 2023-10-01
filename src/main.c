@@ -15,10 +15,10 @@
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
 enum editorKey {
-    ARROW_LEFT = 'a',
-    ARROW_RIGHT = 'd',
-    ARROW_UP = 'w',
-    ARROW_DOWN = 's'
+    ARROW_LEFT = 1000, // use large numbers to avoid conflict with char values
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN
 };
 
 /*** data ***/
@@ -144,7 +144,7 @@ void enableRawMode() {
  * editorReadKey()
  * waits for one keypress and returns it.
 */
-char editorReadKey() {
+int editorReadKey() {
     int nread;
     char c;
     while ((nread = read(STDIN_FILENO, &c, 1)) != 1) { // read 1 byte from stdin into c
@@ -385,7 +385,7 @@ void editorRefreshScreen() {
 
 /*** input ***/
 
-void editorMoveCursor(char key) {
+void editorMoveCursor(int key) {
     switch (key) {
         case ARROW_LEFT:
             E.cx--;
@@ -407,7 +407,7 @@ void editorMoveCursor(char key) {
  * waits for a keypress and handles it.
 */
 void editorProcessKeypress() {
-    char c = editorReadKey();
+    int c = editorReadKey();
 
     switch (c) {
         case CTRL_KEY('q'): // quit on 'q'
