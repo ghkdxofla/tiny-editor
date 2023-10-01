@@ -293,12 +293,21 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
 void editorRefreshScreen() {
     struct abuf ab = ABUF_INIT;
 
+    /**
+     * `"\x1b[?25l"`
+     * The escape sequence \x1b[?25l hides the cursor.
+     * some terminals might not support hiding/showing the cursor,
+     * but if they don’t, then they will just ignore those escape sequences,
+     * which isn’t a big deal in this case.
+    */
+    abAppend(&ab, "\x1b[?25l", 6); // hide cursor(l; Reset Mode)
     abAppend(&ab, "\x1b[2J", 4); // clear screen
     abAppend(&ab, "\x1b[H", 3); // reposition cursor
 
     editorDrawRows(&ab);
 
     abAppend(&ab, "\x1b[H", 3); // reposition cursor
+    abAppend(&ab, "\x1b[?25h", 6); // show cursor(h; Set Mode)
 
     write(STDOUT_FILENO, ab.b, ab.len); // write abuf to stdout
     abFree(&ab);
