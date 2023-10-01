@@ -148,7 +148,30 @@ char editorReadKey() {
         if (nread == -1 && errno != EAGAIN) die("read");
     }
 
-    return c;
+    if (c == '\x1b') {
+        char seq[3];
+
+        /**
+         * `read()`
+         * read() attempts to read up to count bytes from file descriptor fd into the buffer starting at buf.
+         * if return value is not 1, then we know it’s not an escape sequence, so we return the character as-is.
+        */
+        if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[0]
+        if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[1]
+
+        if (seq[0] == '[') {
+            switch (seq[1]) {
+                case 'A': return 'w'; // up
+                case 'B': return 's'; // down
+                case 'C': return 'd'; // right
+                case 'D': return 'a'; // left
+            }
+        }
+
+        return '\x1b';
+    } else {
+        return c;
+    }
 }
 
 int getCursorPosition(int *rows, int *cols) {
