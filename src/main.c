@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -224,15 +225,44 @@ int getWindowSize(int *rows, int *cols) {
     }
 }
 
+/*** append buffer ***/
+
+struct abuf {
+    char *b;
+    int len;
+};
+
+#define ABUF_INIT {NULL, 0} // initialize abuf struct
+
+void abAppend(struct abuf *ab, const char *s, int len) {
+    /**
+     * `realloc()`
+     * The realloc() function changes the size of the memory block pointed to by ptr to size bytes.
+     * It extends the size of the block of memory we already have allocated, 
+     * or it will take care of free()ing the current block of memory
+     * and allocating a new block of memory somewhere else that is big enough for our new string.
+    */
+    char *new = realloc(ab->b, ab->len + len); // allocate memory for new string
+
+    if (new == NULL) return; // return if realloc fails
+    memcpy(&new[ab->len], s, len); // copy string s to end of new string
+    ab->b = new; // assign new string to abuf struct
+    ab->len += len; // update length of abuf struct
+}
+
+void abFree(struct abuf *ab) {
+    free(ab->b);
+}
+
 /*** output ***/
 
-void editorDrawRows() { // draw each row of the buffer to the screen
+void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        write(STDOUT_FILENO, "~", 1);
+        abAppend(ab, "~", 1);
 
         if (y < E.screenrows - 1) {
-            write(STDOUT_FILENO, "\r\n", 2);
+            abAppend(ab, "\r\n", 2);
         }
     }
 }
@@ -261,12 +291,17 @@ void editorDrawRows() { // draw each row of the buffer to the screen
  * you could use the command <esc>[12;40H.
 */
 void editorRefreshScreen() {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    struct abuf ab = ABUF_INIT;
 
-    editorDrawRows();
+    abAppend(&ab, "\x1b[2J", 4); // clear screen
+    abAppend(&ab, "\x1b[H", 3); // reposition cursor
 
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    editorDrawRows(&ab);
+
+    abAppend(&ab, "\x1b[H", 3); // reposition cursor
+
+    write(STDOUT_FILENO, ab.b, ab.len); // write abuf to stdout
+    abFree(&ab);
 }
 
 /*** input ***/
