@@ -14,6 +14,13 @@
 
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
+enum editorKey {
+    ARROW_LEFT = 'a',
+    ARROW_RIGHT = 'd',
+    ARROW_UP = 'w',
+    ARROW_DOWN = 's'
+};
+
 /*** data ***/
 
 struct editorConfig {
@@ -161,10 +168,10 @@ char editorReadKey() {
 
         if (seq[0] == '[') {
             switch (seq[1]) {
-                case 'A': return 'w'; // up
-                case 'B': return 's'; // down
-                case 'C': return 'd'; // right
-                case 'D': return 'a'; // left
+                case 'A': return ARROW_UP; // up
+                case 'B': return ARROW_DOWN; // down
+                case 'C': return ARROW_RIGHT; // right
+                case 'D': return ARROW_LEFT; // left
             }
         }
 
@@ -380,16 +387,16 @@ void editorRefreshScreen() {
 
 void editorMoveCursor(char key) {
     switch (key) {
-        case 'a':
+        case ARROW_LEFT:
             E.cx--;
             break;
-        case 'd':
+        case ARROW_RIGHT:
             E.cx++;
             break;
-        case 'w':
+        case ARROW_UP:
             E.cy--;
             break;
-        case 's':
+        case ARROW_DOWN:
             E.cy++;
             break;
     }
@@ -409,10 +416,10 @@ void editorProcessKeypress() {
             exit(0);
             break;
 
-        case 'w':
-        case 's':
-        case 'a':
-        case 'd':
+        case ARROW_UP:
+        case ARROW_DOWN:
+        case ARROW_LEFT:
+        case ARROW_RIGHT:
             editorMoveCursor(c);
             break;
     }
