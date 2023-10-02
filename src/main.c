@@ -18,7 +18,9 @@ enum editorKey {
     ARROW_LEFT = 1000, // use large numbers to avoid conflict with char values
     ARROW_RIGHT,
     ARROW_UP,
-    ARROW_DOWN
+    ARROW_DOWN,
+    PAGE_UP,
+    PAGE_DOWN
 };
 
 /*** data ***/
@@ -167,11 +169,26 @@ int editorReadKey() {
         if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[1]
 
         if (seq[0] == '[') {
+            if (seq[1] >= '0' && seq[1] <= '9') {
+                if (read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[2]
+                if (seq[2] == '~') {
+                    switch (seq[1]) {
+                        // case '1': return HOME_KEY; // home
+                        // case '3': return DEL_KEY; // delete
+                        // case '4': return END_KEY; // end
+                        case '5': return PAGE_UP; // page up
+                        case '6': return PAGE_DOWN; // page down
+                        // case '7': return HOME_KEY; // home
+                        // case '8': return END_KEY; // end
+                    }
+                }
+            } else {
             switch (seq[1]) {
                 case 'A': return ARROW_UP; // up
                 case 'B': return ARROW_DOWN; // down
                 case 'C': return ARROW_RIGHT; // right
                 case 'D': return ARROW_LEFT; // left
+            }
             }
         }
 
