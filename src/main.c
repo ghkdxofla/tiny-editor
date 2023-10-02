@@ -26,6 +26,7 @@
 
 /*** defines ***/
 #define TINY_VERSION "0.0.1"
+#define TAB_STOP 8
 
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
@@ -45,7 +46,9 @@ enum editorKey {
 
 typedef struct erow {
     int size;
+    int rsize; // render size
     char *chars;
+    char *render; // render string
 } erow;
 
 struct editorConfig {
@@ -315,6 +318,26 @@ int getWindowSize(int *rows, int *cols) {
 
 /*** row operations ***/
 
+void editorUpdateRow(erow *row) {
+    int j, tabs = 0;
+
+    for (j = 0; j < row->size; j++)
+        if (row->chars[j] == '\t') tabs++;
+
+    free(row->render);
+    row->render = malloc(row->size + tabs * (TAB_STOP - 1) + 1); // TAP_STOP spaces for each tab(1 space is already in the size of the row)
+
+    int idx = 0;
+    for (j = 0; j < row->size; j++) {
+        if (row->chars[j] == '\t') {
+            row->render[idx++] = ' ';
+            while (idx % TAB_STOP != 0) row->render[idx++] = ' ';
+        } else row->render[idx++] = row->chars[j];
+    }
+    row->render[idx] = '\0';
+    row->rsize = idx;
+}
+
 void editorAppendRow(char *s, size_t len) {
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1)); // allocate memory for new row
     
@@ -323,6 +346,11 @@ void editorAppendRow(char *s, size_t len) {
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
     E.row[at].chars[len] = '\0'; // null terminate string
+
+    E.row[at].rsize = 0;
+    E.row[at].render = NULL;
+    editorUpdateRow(&E.row[at]);
+
     E.numrows++;
 }
 
@@ -420,10 +448,10 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
                 abAppend(ab, "~", 1);
             }
         } else {
-            int len = E.row[filerow].size - E.coloff;
+            int len = E.row[filerow].rsize - E.coloff;
             if (len < 0) len = 0; // truncate row if it is too short
             if (len > E.screencols) len = E.screencols; // truncate row if it is too long
-            abAppend(ab, &E.row[filerow].chars[E.coloff], len);
+            abAppend(ab, &E.row[filerow].render[E.coloff], len);
         }
 
         /**
