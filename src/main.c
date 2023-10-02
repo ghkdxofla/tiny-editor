@@ -1,5 +1,19 @@
 /*** includes ***/
 
+/**
+ * `#define _DEFAULT_SOURCE`
+ * This is a feature test macro that tells the compiler to include definitions for a POSIX source.
+ * 
+ * `#define _BSD_SOURCE`
+ * This is a feature test macro that tells the compiler to include definitions for a BSD source.
+ * 
+ * `#define _GNU_SOURCE`
+ * This is a feature test macro that tells the compiler to include definitions for a GNU source.
+*/
+#define _DEFAULT_SOURCE // for macOS
+#define _BSD_SOURCE // for Linux
+#define _GNU_SOURCE // for Linux
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
