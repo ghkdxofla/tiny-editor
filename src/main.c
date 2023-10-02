@@ -501,7 +501,7 @@ void editorRefreshScreen() {
 /*** input ***/
 
 void editorMoveCursor(int key) {
-    erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy]; // get current row (if it exists
+    erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy]; // get current row (if it exists)
     switch (key) {
         case ARROW_LEFT:
             if (E.cx != 0) E.cx--;
@@ -515,6 +515,12 @@ void editorMoveCursor(int key) {
         case ARROW_DOWN:
             if (E.cy < E.numrows) E.cy++;
             break;
+    }
+
+    row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy]; // get current row (if it exists)
+    int rowlen = row ? row->size : 0; // get length of current row
+    if (E.cx > rowlen) {
+        E.cx = rowlen;
     }
 }
 
