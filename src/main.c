@@ -489,7 +489,7 @@ void editorRefreshScreen() {
      * snprintf() appends the terminating null byte ('\0') to the output string.
      * save E.cy + 1 and E.cx + 1 to buf with format "\x1b[%d;%dH" and length of buf
     */
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, E.cx + 1); // reposition cursor
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.cx - E.coloff) + 1); // reposition cursor
     abAppend(&ab, buf, strlen(buf));
 
     abAppend(&ab, "\x1b[?25h", 6); // show cursor(h; Set Mode)
