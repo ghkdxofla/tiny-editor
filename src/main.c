@@ -489,6 +489,16 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
     }
 }
 
+void editorDrawStatusBar(struct abuf *ab) {
+    abAppend(ab, "\x1b[7m", 4); // invert colors (7; Reverse Video)
+    int len = 0;
+    while (len < E.screencols) {
+        abAppend(ab, " ", 1);
+        len++;
+    }
+    abAppend(ab, "\x1b[m", 3); // reset colors (m; Turn Off Character Attributes)
+}
+
 /**
  * editorRefreshScreen()
  * clears the screen and draws each row of the buffer to the screen.
@@ -529,6 +539,7 @@ void editorRefreshScreen() {
     abAppend(&ab, "\x1b[H", 3); // reposition cursor
 
     editorDrawRows(&ab);
+    editorDrawStatusBar(&ab);
 
     char buf[32];
 
