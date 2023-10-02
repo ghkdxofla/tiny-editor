@@ -379,6 +379,15 @@ void abFree(struct abuf *ab) {
 
 /*** output ***/
 
+void editorScroll() {
+    if (E.cy < E.rowoff) { // scroll up
+        E.rowoff = E.cy;
+    }
+    if (E.cy >= E.rowoff + E.screenrows) { // scroll down
+        E.rowoff = E.cy - E.screenrows + 1;
+    }
+}
+
 void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
     int y;
     for (y = 0; y < E.screenrows; y++) {
@@ -447,6 +456,8 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
  * you could use the command <esc>[12;40H.
 */
 void editorRefreshScreen() {
+    editorScroll();
+
     struct abuf ab = ABUF_INIT;
 
     /**
@@ -470,7 +481,7 @@ void editorRefreshScreen() {
      * snprintf() appends the terminating null byte ('\0') to the output string.
      * save E.cy + 1 and E.cx + 1 to buf with format "\x1b[%d;%dH" and length of buf
     */
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, E.cx + 1); // reposition cursor
     abAppend(&ab, buf, strlen(buf));
 
     abAppend(&ab, "\x1b[?25h", 6); // show cursor(h; Set Mode)
@@ -493,7 +504,7 @@ void editorMoveCursor(int key) {
             if (E.cy != 0) E.cy--;
             break;
         case ARROW_DOWN:
-            if (E.cy != E.screenrows - 1) E.cy++;
+            if (E.cy < E.numrows) E.cy++;
             break;
     }
 }
