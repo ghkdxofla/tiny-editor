@@ -50,9 +50,10 @@ typedef struct erow {
 
 struct editorConfig {
     int cx, cy; // cursor x, y position
+    int rowoff; // row offset
     int screenrows;
     int screencols;
-    int numrows;
+    int numrows; // number of rows
     erow *row; // pointer to array of erow structs. Dynamically allocated array of erow structs.
     struct termios orig_termios;
 };
@@ -381,7 +382,8 @@ void abFree(struct abuf *ab) {
 void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        if (y >= E.numrows) {
+        int filerow = y + E.rowoff;
+        if (filerow >= E.numrows) {
             if (E.numrows == 0 && y == E.screenrows / 3) {
                 char welcome[80];
                 int welcomelen = snprintf( // snprintf() returns the number of bytes that would have been written if the buffer had been large enough.
@@ -402,9 +404,9 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
                 abAppend(ab, "~", 1);
             }
         } else {
-            int len = E.row[y].size;
+            int len = E.row[filerow].size;
             if (len > E.screencols) len = E.screencols; // truncate row if it is too long
-            abAppend(ab, E.row[y].chars, len);
+            abAppend(ab, E.row[filerow].chars, len);
         }
 
         /**
@@ -540,6 +542,7 @@ void editorProcessKeypress() {
 void initEditor() {
     E.cx = 0;
     E.cy = 0;
+    E.rowoff = 0;
     E.numrows = 0;
     E.row = NULL;
 
