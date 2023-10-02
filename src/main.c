@@ -495,14 +495,20 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
 
 void editorDrawStatusBar(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4); // invert colors (7; Reverse Video)
-    char status[80];
+    char status[80], rstatus[80];
     int len = snprintf(status, sizeof(status), "%.20s - %d lines", E.filename ? E.filename : "[No Name]", E.numrows);
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", E.cy + 1, E.numrows); // current row and total number of rows
     if (len > E.screencols) len = E.screencols; // truncate status message if it is too long
     abAppend(ab, status, len);
-    
+
     while (len < E.screencols) {
-        abAppend(ab, " ", 1);
-        len++;
+        if (E.screencols - len == rlen) {
+            abAppend(ab, rstatus, rlen);
+            break;
+        } else {
+            abAppend(ab, " ", 1);
+            len++;
+        }
     }
     abAppend(ab, "\x1b[m", 3); // reset colors (m; Turn Off Character Attributes)
 }
