@@ -53,6 +53,7 @@ typedef struct erow {
 
 struct editorConfig {
     int cx, cy; // cursor x, y position
+    int rx; // render x position
     int rowoff; // row offset
     int coloff; // column offset
     int screenrows;
@@ -318,6 +319,23 @@ int getWindowSize(int *rows, int *cols) {
 
 /*** row operations ***/
 
+/**
+ * `editorRowCxToRx()`
+ * 
+ * if it’s a tab we use rx % KILO_TAB_STOP to find out how many columns we are to the right of the last tab stop,
+ * and then subtract that from KILO_TAB_STOP - 1 to find out how many columns we are to the left of the next tab stop.
+*/
+int editorRowCxToRx(erow *row, int cx) {
+    int rx = 0;
+    int j;
+    for (j = 0; j < cx; j++) {
+        if (row->chars[j] == '\t') rx += (TAB_STOP - 1) - (rx % TAB_STOP); // add number of spaces until next tab stop
+        rx++;
+    }
+
+    return rx;
+}
+
 void editorUpdateRow(erow *row) {
     int j, tabs = 0;
 
@@ -409,17 +427,22 @@ void abFree(struct abuf *ab) {
 /*** output ***/
 
 void editorScroll() {
+    E.rx = 0;
+    if(E.cy < E.numrows) {
+        E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
+    }
+
     if (E.cy < E.rowoff) { // scroll up
         E.rowoff = E.cy;
     }
     if (E.cy >= E.rowoff + E.screenrows) { // scroll down
         E.rowoff = E.cy - E.screenrows + 1;
     }
-    if (E.cx < E.coloff) { // scroll left
-        E.coloff = E.cx;
+    if (E.rx < E.coloff) { // scroll left
+        E.coloff = E.rx;
     }
-    if (E.cx >= E.coloff + E.screencols) { // scroll right
-        E.coloff = E.cx - E.screencols + 1;
+    if (E.rx >= E.coloff + E.screencols) { // scroll right
+        E.coloff = E.rx - E.screencols + 1;
     }
 }
 
@@ -517,7 +540,7 @@ void editorRefreshScreen() {
      * snprintf() appends the terminating null byte ('\0') to the output string.
      * save E.cy + 1 and E.cx + 1 to buf with format "\x1b[%d;%dH" and length of buf
     */
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.cx - E.coloff) + 1); // reposition cursor
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1); // reposition cursor
     abAppend(&ab, buf, strlen(buf));
 
     abAppend(&ab, "\x1b[?25h", 6); // show cursor(h; Set Mode)
@@ -604,6 +627,7 @@ void editorProcessKeypress() {
 void initEditor() {
     E.cx = 0;
     E.cy = 0;
+    E.rx = 0;
     E.rowoff = 0;
     E.coloff = 0;
     E.numrows = 0;
