@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -28,10 +29,17 @@ enum editorKey {
 
 /*** data ***/
 
+typedef struct erow {
+    int size;
+    char *chars;
+} erow;
+
 struct editorConfig {
     int cx, cy; // cursor x, y position
     int screenrows;
     int screencols;
+    int numrows;
+    erow row;
     struct termios orig_termios;
 };
 
@@ -289,6 +297,19 @@ int getWindowSize(int *rows, int *cols) {
     }
 }
 
+/*** file i/o ***/
+
+void editorOpen() {
+    char *line = "Hello, world!";
+    ssize_t linelen = strlen(line); // ssize_t is a signed version of size_t
+
+    E.row.size = linelen;
+    E.row.chars = malloc(linelen + 1);
+    memcpy(E.row.chars, line, linelen);
+    E.row.chars[linelen] = '\0'; // null terminate string
+    E.numrows = 1;
+}
+
 /*** append buffer ***/
 
 struct abuf {
@@ -323,24 +344,30 @@ void abFree(struct abuf *ab) {
 void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        if (y == E.screenrows / 3) {
-            char welcome[80];
-            int welcomelen = snprintf( // snprintf() returns the number of bytes that would have been written if the buffer had been large enough.
-                welcome, 
-                sizeof(welcome), 
-                "TINY editor -- version %s", 
-                TINY_VERSION
-            );
-            if (welcomelen > E.screencols) welcomelen = E.screencols; // truncate welcome message if it is too long
-            int padding = (E.screencols - welcomelen) / 2; // center welcome message
-            if (padding) {
+        if (y >= E.numrows) {
+            if (y == E.screenrows / 3) {
+                char welcome[80];
+                int welcomelen = snprintf( // snprintf() returns the number of bytes that would have been written if the buffer had been large enough.
+                    welcome, 
+                    sizeof(welcome), 
+                    "TINY editor -- version %s", 
+                    TINY_VERSION
+                );
+                if (welcomelen > E.screencols) welcomelen = E.screencols; // truncate welcome message if it is too long
+                int padding = (E.screencols - welcomelen) / 2; // center welcome message
+                if (padding) {
+                    abAppend(ab, "~", 1);
+                    padding--;
+                }
+                while (padding--) abAppend(ab, " ", 1);
+                abAppend(ab, welcome, welcomelen);
+            } else {
                 abAppend(ab, "~", 1);
-                padding--;
             }
-            while (padding--) abAppend(ab, " ", 1);
-            abAppend(ab, welcome, welcomelen);
         } else {
-            abAppend(ab, "~", 1);
+            int len = E.row.size;
+            if (len > E.screencols) len = E.screencols; // truncate row if it is too long
+            abAppend(ab, E.row.chars, len);
         }
 
         /**
@@ -476,6 +503,7 @@ void editorProcessKeypress() {
 void initEditor() {
     E.cx = 0;
     E.cy = 0;
+    E.numrows = 0;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
@@ -483,6 +511,7 @@ void initEditor() {
 int main() {
     enableRawMode();
     initEditor();
+    editorOpen();
 
     while (1) {
         editorRefreshScreen();
