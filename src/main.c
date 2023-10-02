@@ -19,6 +19,8 @@ enum editorKey {
     ARROW_RIGHT,
     ARROW_UP,
     ARROW_DOWN,
+    HOME_KEY,
+    END_KEY,
     PAGE_UP,
     PAGE_DOWN
 };
@@ -168,18 +170,22 @@ int editorReadKey() {
         if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[0]
         if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[1]
 
+        /**
+         * The Home key could be sent as <esc>[1~, <esc>[7~, <esc>[H, or <esc>OH.
+         * Similarly, the End key could be sent as <esc>[4~, <esc>[8~, <esc>[F, or <esc>OF.
+        */
         if (seq[0] == '[') {
             if (seq[1] >= '0' && seq[1] <= '9') {
                 if (read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b'; // read 1 byte from stdin into seq[2]
                 if (seq[2] == '~') {
                     switch (seq[1]) {
-                        // case '1': return HOME_KEY; // home
+                        case '1': return HOME_KEY; // home
                         // case '3': return DEL_KEY; // delete
-                        // case '4': return END_KEY; // end
+                        case '4': return END_KEY; // end
                         case '5': return PAGE_UP; // page up
                         case '6': return PAGE_DOWN; // page down
-                        // case '7': return HOME_KEY; // home
-                        // case '8': return END_KEY; // end
+                        case '7': return HOME_KEY; // home
+                        case '8': return END_KEY; // end
                     }
                 }
             } else {
@@ -188,7 +194,14 @@ int editorReadKey() {
                 case 'B': return ARROW_DOWN; // down
                 case 'C': return ARROW_RIGHT; // right
                 case 'D': return ARROW_LEFT; // left
+                case 'H': return HOME_KEY; // home
+                case 'F': return END_KEY; // end
             }
+            }
+        } else if (seq[0] == 'O') {
+            switch (seq[1]) {
+                case 'H': return HOME_KEY; // home
+                case 'F': return END_KEY; // end
             }
         }
 
