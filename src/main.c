@@ -374,7 +374,7 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
     int y;
     for (y = 0; y < E.screenrows; y++) {
         if (y >= E.numrows) {
-            if (y == E.screenrows / 3) {
+            if (E.numrows == 0 && y == E.screenrows / 3) {
                 char welcome[80];
                 int welcomelen = snprintf( // snprintf() returns the number of bytes that would have been written if the buffer had been large enough.
                     welcome, 
