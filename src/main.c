@@ -339,11 +339,10 @@ void editorOpen(char *filename) {
      * getline() reads an entire line from stream,
      * storing the address of the buffer containing the text into *lineptr.
     */
-    linelen = getline(&line, &linecap, fp); // read line from file
-    if (linelen != -1) {
-        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) linelen--; // remove trailing newline characters
-        editorAppendRow(line, linelen);
-    }
+   while((linelen = getline(&line, &linecap, fp)) != -1) { // read line from file. returns -1 at the end of file
+       while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) linelen--; // remove trailing newline characters
+       editorAppendRow(line, linelen);
+   }
     free(line);
     fclose(fp);
 }
@@ -403,9 +402,9 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
                 abAppend(ab, "~", 1);
             }
         } else {
-            int len = E.row.size;
+            int len = E.row[y].size;
             if (len > E.screencols) len = E.screencols; // truncate row if it is too long
-            abAppend(ab, E.row.chars, len);
+            abAppend(ab, E.row[y].chars, len);
         }
 
         /**
