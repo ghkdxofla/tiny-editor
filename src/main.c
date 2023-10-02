@@ -485,9 +485,7 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
          * 0(default) erases from the cursor to the end of the line.
         */
         abAppend(ab, "\x1b[K", 3); // clear line (K; Erase In Line)
-        if (y < E.screenrows - 1) {
-            abAppend(ab, "\r\n", 2);
-        }
+        abAppend(ab, "\r\n", 2);
     }
 }
 
@@ -641,6 +639,7 @@ void initEditor() {
     E.row = NULL;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
+    E.screenrows -= 1; // make room for status bar
 }
 
 int main(int argc, char *argv[]) {
