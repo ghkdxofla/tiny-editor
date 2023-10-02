@@ -60,6 +60,7 @@ struct editorConfig {
     int screencols;
     int numrows; // number of rows
     erow *row; // pointer to array of erow structs. Dynamically allocated array of erow structs.
+    char *filename; // filename
     struct termios orig_termios;
 };
 
@@ -375,6 +376,9 @@ void editorAppendRow(char *s, size_t len) {
 /*** file i/o ***/
 
 void editorOpen(char *filename) {
+    free(E.filename);
+    E.filename = strdup(filename); // strdup() returns a pointer to a new string which is a duplicate of the string s.
+
     FILE *fp = fopen(filename, "r"); // open file in read mode
     if (!fp) die("fopen");
 
@@ -491,7 +495,11 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
 
 void editorDrawStatusBar(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4); // invert colors (7; Reverse Video)
-    int len = 0;
+    char status[80];
+    int len = snprintf(status, sizeof(status), "%.20s - %d lines", E.filename ? E.filename : "[No Name]", E.numrows);
+    if (len > E.screencols) len = E.screencols; // truncate status message if it is too long
+    abAppend(ab, status, len);
+    
     while (len < E.screencols) {
         abAppend(ab, " ", 1);
         len++;
@@ -648,6 +656,7 @@ void initEditor() {
     E.coloff = 0;
     E.numrows = 0;
     E.row = NULL;
+    E.filename = NULL;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
     E.screenrows -= 1; // make room for status bar
