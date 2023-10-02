@@ -51,6 +51,7 @@ typedef struct erow {
 struct editorConfig {
     int cx, cy; // cursor x, y position
     int rowoff; // row offset
+    int coloff; // column offset
     int screenrows;
     int screencols;
     int numrows; // number of rows
@@ -386,6 +387,12 @@ void editorScroll() {
     if (E.cy >= E.rowoff + E.screenrows) { // scroll down
         E.rowoff = E.cy - E.screenrows + 1;
     }
+    if (E.cx < E.coloff) { // scroll left
+        E.coloff = E.cx;
+    }
+    if (E.cx >= E.coloff + E.screencols) { // scroll right
+        E.coloff = E.cx - E.screencols + 1;
+    }
 }
 
 void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the screen
@@ -413,9 +420,10 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
                 abAppend(ab, "~", 1);
             }
         } else {
-            int len = E.row[filerow].size;
+            int len = E.row[filerow].size - E.coloff;
+            if (len < 0) len = 0; // truncate row if it is too short
             if (len > E.screencols) len = E.screencols; // truncate row if it is too long
-            abAppend(ab, E.row[filerow].chars, len);
+            abAppend(ab, &E.row[filerow].chars[E.coloff], len);
         }
 
         /**
@@ -498,7 +506,7 @@ void editorMoveCursor(int key) {
             if (E.cx != 0) E.cx--;
             break;
         case ARROW_RIGHT:
-            if (E.cx != E.screencols - 1) E.cx++;
+            E.cx++;
             break;
         case ARROW_UP:
             if (E.cy != 0) E.cy--;
@@ -554,6 +562,7 @@ void initEditor() {
     E.cx = 0;
     E.cy = 0;
     E.rowoff = 0;
+    E.coloff = 0;
     E.numrows = 0;
     E.row = NULL;
 
