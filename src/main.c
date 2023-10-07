@@ -33,6 +33,7 @@
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
 enum editorKey {
+    BACKSPACE = 127, // use large numbers to avoid conflict with char values (127; ASCII)
     ARROW_LEFT = 1000, // use large numbers to avoid conflict with char values
     ARROW_RIGHT,
     ARROW_UP,
@@ -676,6 +677,10 @@ void editorProcessKeypress() {
     int c = editorReadKey();
 
     switch (c) {
+        case '\r':
+            // TODO
+            break;
+
         case CTRL_KEY('q'): // quit on 'q'
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
@@ -688,6 +693,17 @@ void editorProcessKeypress() {
 
         case END_KEY:
             if (E.cy < E.numrows) E.cx = E.row[E.cy].size;
+            break;
+
+        /**
+         * We also handle the Ctrl-H key combination, 
+         * which sends the control code 8, which is originally what the Backspace character would send back in the day. 
+         * If you look at the ASCII table, you’ll see that ASCII code 8 is named BS for "backspace"
+        */
+        case BACKSPACE:
+        case CTRL_KEY('h'):
+        case DEL_KEY:
+            // TODO
             break;
 
         case PAGE_UP:
@@ -710,6 +726,14 @@ void editorProcessKeypress() {
         case ARROW_LEFT:
         case ARROW_RIGHT:
             editorMoveCursor(c);
+            break;
+
+        /**
+         * ignore the Escape key because there are many key escape sequences that we aren’t handling (such as the F1–F12 keys), 
+         * and the way we wrote editorReadKey(), pressing those keys will be equivalent to pressing the Escape key. 
+        */
+        case CTRL_KEY('l'): // refresh screen on 'ctrl-l'
+        case '\x1b': // escape key
             break;
         
         default:
