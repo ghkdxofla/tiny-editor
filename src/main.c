@@ -377,6 +377,32 @@ void editorAppendRow(char *s, size_t len) {
     E.numrows++;
 }
 
+void editorRowInsertChar(erow *row, int at, int c) {
+    if (at < 0 || at > row->size) at = row->size; // if at is out of bounds, set it to the end of the row
+
+    row->chars = realloc(row->chars, row->size + 2); // allocate memory for new char. add 2 because we also have to make room for the null byte
+    /**
+     * `memmove()`
+     * memmove() copies n bytes from memory area src to memory area dest.
+     * The memory areas may overlap: copying takes place as though the bytes in src are first copied into a temporary array that does not overlap src or dest, 
+     * and the bytes are then copied from the temporary array to dest.
+    */
+    memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1); // move chars after at to the right by 1
+    row->size++;
+    row->chars[at] = c;
+    editorUpdateRow(row);
+}
+
+/*** editor operations ***/
+
+void editorInsertChar(int c) {
+    if (E.cy == E.numrows) { // if cursor is at the end of the file
+        editorAppendRow("", 0); // append empty row
+    }
+    editorRowInsertChar(&E.row[E.cy], E.cx, c); // insert char at cursor position
+    E.cx++;
+}
+
 /*** file i/o ***/
 
 void editorOpen(char *filename) {
