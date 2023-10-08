@@ -30,6 +30,7 @@
 /*** defines ***/
 #define TINY_VERSION "0.0.1"
 #define TAB_STOP 8
+#define QUIT_TIMES 2
 
 #define CTRL_KEY(k) ((k) & 0x1f) // bitwise-AND k with 00011111
 
@@ -747,6 +748,8 @@ void editorMoveCursor(int key) {
  * waits for a keypress and handles it.
 */
 void editorProcessKeypress() {
+    static int quit_times = TINY_QUIT_TIMES;
+
     int c = editorReadKey();
 
     switch (c) {
@@ -755,6 +758,11 @@ void editorProcessKeypress() {
             break;
 
         case CTRL_KEY('q'): // quit on 'q'
+            if (E.dirty && quit_times > 0) {
+                editorSetStatusMessage("WARNING!!! File has unsaved changes. Press Ctrl-Q %d more times to quit.", quit_times);
+                quit_times--;
+                return;
+            }
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
@@ -817,6 +825,8 @@ void editorProcessKeypress() {
             editorInsertChar(c);
             break;
     }
+
+    quit_times = KILO_QUIT_TIMES;
 }
 
 /*** init ***/
