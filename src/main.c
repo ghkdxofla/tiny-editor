@@ -444,6 +444,21 @@ void editorInsertChar(int c) {
     E.cx++;
 }
 
+void editorInsertNewLine() {
+    if (E.cx == 0) {
+        editorInsertRow(E.cy, "", 0); // insert empty row at cursor position
+    } else {
+        erow *row = &E.row[E.cy];
+        editorInsertRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx); // insert new row at cursor position
+        row = &E.row[E.cy]; // update row pointer. editorInsertRow() calls realloc(), which might move memory around on us and invalidate the pointer (yikes)
+        row->size = E.cx;
+        row->chars[row->size] = '\0'; // null terminate string
+        editorUpdateRow(row);
+    }
+    E.cy++;
+    E.cx = 0;
+}
+
 void editorDelChar() {
     if (E.cy == E.numrows) return; // if cursor is at the end of the file
     if (E.cx == 0 & E.cy == 0) return; // if cursor is at the beginning of the file
@@ -802,7 +817,7 @@ void editorProcessKeypress() {
 
     switch (c) {
         case '\r':
-            // TODO
+            editorInsertNewLine();
             break;
 
         case CTRL_KEY('q'): // quit on 'q'
