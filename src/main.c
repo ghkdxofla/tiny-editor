@@ -826,7 +826,7 @@ void editorProcessKeypress() {
             break;
     }
 
-    quit_times = KILO_QUIT_TIMES;
+    quit_times = QUIT_TIMES;
 }
 
 /*** init ***/
