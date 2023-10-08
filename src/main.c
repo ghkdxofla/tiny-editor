@@ -402,6 +402,14 @@ void editorRowInsertChar(erow *row, int at, int c) {
     E.dirty++;
 }
 
+void editorRowDelChar(erow *row, int at) {
+    if (at < 0 || at >= row->size) return; // if at is out of bounds, return
+    memmove(&row->chars[at], &row->chars[at + 1], row->size - at); // move chars after at to the left by 1
+    row->size--;
+    editorUpdateRow(row);
+    E.dirty++;
+}
+
 /*** editor operations ***/
 
 void editorInsertChar(int c) {
@@ -410,6 +418,16 @@ void editorInsertChar(int c) {
     }
     editorRowInsertChar(&E.row[E.cy], E.cx, c); // insert char at cursor position
     E.cx++;
+}
+
+void editorDelChar() {
+    if (E.cy == E.numrows) return; // if cursor is at the end of the file
+
+    erow *row = &E.row[E.cy];
+    if (E.cx > 0) {
+        editorRowDelChar(row, E.cx - 1); // delete char to the left of the cursor
+        E.cx--;
+    }
 }
 
 /*** file i/o ***/
@@ -788,7 +806,8 @@ void editorProcessKeypress() {
         case BACKSPACE:
         case CTRL_KEY('h'):
         case DEL_KEY:
-            // TODO
+            if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT); // move cursor right on 'delete'
+            editorDelChar();
             break;
 
         case PAGE_UP:
