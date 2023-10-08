@@ -368,7 +368,7 @@ void editorUpdateRow(erow *row) {
     row->rsize = idx;
 }
 
-void editorAppendRow(char *s, size_t len) {
+void editorInsertRow(char *s, size_t len) {
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1)); // allocate memory for new row
     
     int at = E.numrows;
@@ -436,7 +436,7 @@ void editorRowDelChar(erow *row, int at) {
 
 void editorInsertChar(int c) {
     if (E.cy == E.numrows) { // if cursor is at the end of the file
-        editorAppendRow("", 0); // append empty row
+        editorInsertRow("", 0); // append empty row
     }
     editorRowInsertChar(&E.row[E.cy], E.cx, c); // insert char at cursor position
     E.cx++;
@@ -496,7 +496,7 @@ void editorOpen(char *filename) {
     */
    while((linelen = getline(&line, &linecap, fp)) != -1) { // read line from file. returns -1 at the end of file
        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) linelen--; // remove trailing newline characters
-       editorAppendRow(line, linelen);
+       editorInsertRow(line, linelen);
    }
     free(line);
     fclose(fp);
