@@ -16,6 +16,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -406,6 +407,24 @@ void editorInsertChar(int c) {
 
 /*** file i/o ***/
 
+char *editorRowsToString(int *buflen) {
+    int totlen = 0;
+    int j;
+    for (j = 0; j < E.numrows; j++) totlen += E.row[j].size + 1; // add length of each row + 1 for newline character
+    *buflen = totlen;
+
+    char *buf = malloc(totlen);
+    char *p = buf; // pointer to buf
+    for (j = 0; j < E.numrows; j++) { // copy each row to buf
+        memcpy(p, E.row[j].chars, E.row[j].size);
+        p += E.row[j].size; // move pointer to end of row
+        *p = '\n'; // add newline character
+        p++;
+    }
+
+    return buf;
+}
+
 void editorOpen(char *filename) {
     free(E.filename);
     E.filename = strdup(filename); // strdup() returns a pointer to a new string which is a duplicate of the string s.
@@ -428,6 +447,40 @@ void editorOpen(char *filename) {
    }
     free(line);
     fclose(fp);
+}
+
+void editorSave() {
+    if (E.filename == NULL) return;
+
+    int len;
+    char *buf = editorRowsToString(&len);
+
+    /**
+     * `O_RDWR`
+     * Open the file so that it can be read from and written to.
+     * 
+     * `O_CREAT`
+     * If the file does not exist it will be created.
+     * 
+     * `O_TRUNC`
+     * If the file already exists and is a regular file and the access mode allows writing (i.e., is O_RDWR or O_WRONLY) it will be truncated to length 0.
+     * 
+     * `0644`
+     * The mode specifies both the permissions to use if a new file is created and the permissions for the file if it already exists.
+     * It gives the owner of the file permission to read and write the file,
+     * and everyone else only gets permission to read the file.
+    */
+    int fd = open(E.filename, O_RDWR | O_CREAT, 0644); // open file in read/write mode. create file if it doesn't exist
+    
+    /**
+     * `ftruncate()`
+     * If the file previously was larger than this size, the extra data is lost.
+     * If the file previously was shorter, it is extended, and the extended part reads as null bytes ('\0').
+    */
+    ftruncate(fd, len); // truncate file to a specified length
+    write(fd, buf, len); // write buf to file
+    close(fd);
+    free(buf);
 }
 
 /*** append buffer ***/
@@ -685,6 +738,10 @@ void editorProcessKeypress() {
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
+            break;
+
+        case CTRL_KEY('s'): // save on 'ctrl-s'
+            editorSave();
             break;
 
         case HOME_KEY:
