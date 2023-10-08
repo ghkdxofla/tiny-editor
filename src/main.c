@@ -368,10 +368,12 @@ void editorUpdateRow(erow *row) {
     row->rsize = idx;
 }
 
-void editorInsertRow(char *s, size_t len) {
+void editorInsertRow(int at, char *s, size_t len) {
+    if (at < 0 || at > E.numrows) return; // if at is out of bounds, return
+
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1)); // allocate memory for new row
+    memmove(&E.row[at + 1], &E.row[at], sizeof(erow) * (E.numrows - at)); // move rows after at to the right by 1 (memmove() is like memcpy() but it works even if the memory regions overlap
     
-    int at = E.numrows;
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
@@ -436,7 +438,7 @@ void editorRowDelChar(erow *row, int at) {
 
 void editorInsertChar(int c) {
     if (E.cy == E.numrows) { // if cursor is at the end of the file
-        editorInsertRow("", 0); // append empty row
+        editorInsertRow(E.numrows, "", 0); // append empty row
     }
     editorRowInsertChar(&E.row[E.cy], E.cx, c); // insert char at cursor position
     E.cx++;
@@ -496,7 +498,7 @@ void editorOpen(char *filename) {
     */
    while((linelen = getline(&line, &linecap, fp)) != -1) { // read line from file. returns -1 at the end of file
        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) linelen--; // remove trailing newline characters
-       editorInsertRow(line, linelen);
+       editorInsertRow(E.numrows, line, linelen);
    }
     free(line);
     fclose(fp);
