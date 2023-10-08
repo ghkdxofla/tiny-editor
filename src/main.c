@@ -748,7 +748,7 @@ void editorMoveCursor(int key) {
  * waits for a keypress and handles it.
 */
 void editorProcessKeypress() {
-    static int quit_times = TINY_QUIT_TIMES;
+    static int quit_times = QUIT_TIMES;
 
     int c = editorReadKey();
 
