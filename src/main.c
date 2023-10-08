@@ -471,16 +471,25 @@ void editorSave() {
      * and everyone else only gets permission to read the file.
     */
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644); // open file in read/write mode. create file if it doesn't exist
-    
-    /**
-     * `ftruncate()`
-     * If the file previously was larger than this size, the extra data is lost.
-     * If the file previously was shorter, it is extended, and the extended part reads as null bytes ('\0').
-    */
-    ftruncate(fd, len); // truncate file to a specified length
-    write(fd, buf, len); // write buf to file
-    close(fd);
+    if (fd != -1) {
+        if (ftruncate(fd, len) != -1) { // truncate file to a specified length
+            /**
+             * `ftruncate()`
+             * If the file previously was larger than this size, the extra data is lost.
+             * If the file previously was shorter, it is extended, and the extended part reads as null bytes ('\0').
+            */
+            if (write(fd, buf, len) == len) { // write buf to file
+                close(fd);
+                free(buf);
+                editorSetStatusMessage("%d bytes written to disk", len);
+                return;
+            }
+        }
+        close(fd);
+    }
+
     free(buf);
+    editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno)); // strerror() returns a pointer to a string that describes the error code passed in the argument errnum
 }
 
 /*** append buffer ***/
@@ -824,7 +833,7 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]);
     }
 
-    editorSetStatusMessage("HELP: Ctrl-Q = quit");
+    editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
     while (1) {
         editorRefreshScreen();
