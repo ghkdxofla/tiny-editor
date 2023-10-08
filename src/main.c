@@ -385,6 +385,19 @@ void editorAppendRow(char *s, size_t len) {
     E.dirty++;
 }
 
+void editorFreeRow(erow *row) {
+    free(row->render);
+    free(row->chars);
+}
+
+void editorDelRow(int at) {
+    if (at < 0 || at >= E.numrows) return; // if at is out of bounds, return
+    editorFreeRow(&E.row[at]);
+    memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1)); // move rows after at to the left by 1
+    E.numrows--;
+    E.dirty++;
+}
+
 void editorRowInsertChar(erow *row, int at, int c) {
     if (at < 0 || at > row->size) at = row->size; // if at is out of bounds, set it to the end of the row
 
