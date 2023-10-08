@@ -415,6 +415,15 @@ void editorRowInsertChar(erow *row, int at, int c) {
     E.dirty++;
 }
 
+void editorRowAppendString(erow *row, char *s, size_t len) {
+    row->chars = realloc(row->chars, row->size + len + 1); // allocate memory for new string including null byte
+    memcpy(&row->chars[row->size], s, len); // copy string s to end of row
+    row->size += len;
+    row->chars[row->size] = '\0';
+    editorUpdateRow(row);
+    E.dirty++;
+}
+
 void editorRowDelChar(erow *row, int at) {
     if (at < 0 || at >= row->size) return; // if at is out of bounds, return
     memmove(&row->chars[at], &row->chars[at + 1], row->size - at); // move chars after at to the left by 1
@@ -435,11 +444,17 @@ void editorInsertChar(int c) {
 
 void editorDelChar() {
     if (E.cy == E.numrows) return; // if cursor is at the end of the file
+    if (E.cx == 0 & E.cy == 0) return; // if cursor is at the beginning of the file
 
     erow *row = &E.row[E.cy];
     if (E.cx > 0) {
         editorRowDelChar(row, E.cx - 1); // delete char to the left of the cursor
         E.cx--;
+    } else {
+        E.cx = E.row[E.cy - 1].size; // move cursor to the end of the previous line
+        editorRowAppendString(&E.row[E.cy - 1], row->chars, row->size); // append current line to previous line
+        editorDelRow(E.cy); // delete current line
+        E.cy--;
     }
 }
 
