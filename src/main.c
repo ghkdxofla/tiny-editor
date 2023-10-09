@@ -76,6 +76,8 @@ struct editorConfig E;
 
 /*** prototypes ***/
 void editorSetStatusMessage(const char *fmt, ...);
+void editorRefreshScreen();
+char *editorPrompt(char *prompt);
 
 /*** terminal ***/
 
@@ -521,7 +523,13 @@ void editorOpen(char *filename) {
 }
 
 void editorSave() {
-    if (E.filename == NULL) return;
+    if (E.filename == NULL) {
+        E.filename = editorPrompt("Save as: %s (ESC to cancel)"); // prompt user for filename
+        if (E.filename == NULL) {
+            editorSetStatusMessage("Save aborted");
+            return;
+        }
+    }
 
     int len;
     char *buf = editorRowsToString(&len);
@@ -773,6 +781,40 @@ void editorSetStatusMessage(const char *fmt, ...) {
 }
 
 /*** input ***/
+
+char *editorPrompt(char *prompt) {
+    size_t bufsize = 128;
+    char *buf = malloc(bufsize);
+
+    size_t buflen = 0;
+    buf[0] = '\0'; // initialize buf to empty string
+
+    while (1) {
+        editorSetStatusMessage(prompt, buf);
+        editorRefreshScreen();
+
+        int c = editorReadKey();
+        if (c == DEL_KEY || c == CTRL_KEY('h') || c == BACKSPACE) { // delete char on 'delete', 'ctrl-h', or 'backspace'
+            if (buflen != 0) buf[--buflen] = '\0'; // remove last char from buf
+        } else if (c == '\x1b') { // escape key
+            editorSetStatusMessage(""); // clear status message
+            free(buf);
+            return NULL;
+        } else if (c == '\r') { // enter key
+            if (buflen != 0) {
+                editorSetStatusMessage("");
+                return buf;
+            }
+        } else if (!iscntrl(c) && c < 128) { // if c is not a control character and is less than 128
+            if (buflen == bufsize - 1) {
+                bufsize *= 2; // double buffer size
+                buf = realloc(buf, bufsize); // reallocate memory for new buffer size
+            }
+            buf[buflen++] = c;
+            buf[buflen] = '\0'; // null terminate string
+        }
+    }
+}
 
 void editorMoveCursor(int key) {
     erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy]; // get current row (if it exists)
