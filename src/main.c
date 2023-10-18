@@ -925,6 +925,10 @@ void editorProcessKeypress() {
             if (E.cy < E.numrows) E.cx = E.row[E.cy].size;
             break;
 
+        case CTRL_KEY('f'): // find on 'ctrl-f'
+            editorFind();
+            break;
+
         /**
          * We also handle the Ctrl-H key combination, 
          * which sends the control code 8, which is originally what the Backspace character would send back in the day. 
@@ -1001,7 +1005,7 @@ int main(int argc, char *argv[]) {
         editorOpen(argv[1]);
     }
 
-    editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
+    editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
 
     while (1) {
         editorRefreshScreen();
