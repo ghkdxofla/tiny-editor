@@ -350,6 +350,25 @@ int editorRowCxToRx(erow *row, int cx) {
     return rx;
 }
 
+/**
+ * `editorRowRxToCx()`
+ * 
+ * if it’s a tab we use cur_rx % KILO_TAB_STOP to find out how many columns we are to the right of the last tab stop,
+ * and then subtract that from KILO_TAB_STOP - 1 to find out how many columns we are to the left of the next tab stop.
+*/
+int editorRowRxToCx(erow *row, int rx) {
+    int cur_rx = 0;
+    int cx;
+    for (cx = 0; cx < row->size; cx++) {
+        if (row->chars[j] == '\t') cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP); // add number of spaces until next tab stop
+        cur_rx++;
+
+        if (cur_rx > rx) return cx; // return index of character at cx
+    }
+
+    return cx;
+}
+
 void editorUpdateRow(erow *row) {
     int j, tabs = 0;
 
@@ -584,7 +603,7 @@ void editorFind() {
         char *match = strstr(row->render, query); // strstr() returns a pointer to the first occurrence of query in row->render, or NULL if no match is found
         if (match) {
             E.cy = i;
-            E.cx = match - row->render; // set cursor position to beginning of match
+            E.cx = editorRowRxToCx(row, match - row->render); // set cursor position to beginning of match
             E.rowoff = E.numrows; // scroll to bottom of file
             break;
         }
