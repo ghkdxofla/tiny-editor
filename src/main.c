@@ -572,6 +572,27 @@ void editorSave() {
     editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno)); // strerror() returns a pointer to a string that describes the error code passed in the argument errnum
 }
 
+/*** find ***/
+
+void editorFind() {
+    char *query = editorPrompt("Search: %s (ESC to cancel)");
+    if (query == NULL) return;
+
+    int i;
+    for (i = 0; i < E.numrows; i++) { // search each row
+        erow *row = &E.row[i];
+        char *match = strstr(row->render, query); // strstr() returns a pointer to the first occurrence of query in row->render, or NULL if no match is found
+        if (match) {
+            E.cy = i;
+            E.cx = match - row->render; // set cursor position to beginning of match
+            E.rowoff = E.numrows; // scroll to bottom of file
+            break;
+        }
+    }
+
+    free(query);
+}
+
 /*** append buffer ***/
 
 struct abuf {
