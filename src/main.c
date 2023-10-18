@@ -360,7 +360,7 @@ int editorRowRxToCx(erow *row, int rx) {
     int cur_rx = 0;
     int cx;
     for (cx = 0; cx < row->size; cx++) {
-        if (row->chars[j] == '\t') cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP); // add number of spaces until next tab stop
+        if (row->chars[cx] == '\t') cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP); // add number of spaces until next tab stop
         cur_rx++;
 
         if (cur_rx > rx) return cx; // return index of character at cx
