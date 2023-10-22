@@ -77,7 +77,7 @@ struct editorConfig E;
 /*** prototypes ***/
 void editorSetStatusMessage(const char *fmt, ...);
 void editorRefreshScreen();
-char *editorPrompt(char *prompt);
+char *editorPrompt(char *prompt, void (*callback)(char *, int));
 
 /*** terminal ***/
 
@@ -556,7 +556,7 @@ void editorOpen(char *filename) {
 
 void editorSave() {
     if (E.filename == NULL) {
-        E.filename = editorPrompt("Save as: %s (ESC to cancel)"); // prompt user for filename
+        E.filename = editorPrompt("Save as: %s (ESC to cancel)", NULL); // prompt user for filename
         if (E.filename == NULL) {
             editorSetStatusMessage("Save aborted");
             return;
@@ -607,7 +607,7 @@ void editorSave() {
 /*** find ***/
 
 void editorFind() {
-    char *query = editorPrompt("Search: %s (ESC to cancel)");
+    char *query = editorPrompt("Search: %s (ESC to cancel)", NULL);
     if (query == NULL) return;
 
     int i;
@@ -835,7 +835,7 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 /*** input ***/
 
-char *editorPrompt(char *prompt) {
+char *editorPrompt(char *prompt, void (*callback)(char *, int)) {
     size_t bufsize = 128;
     char *buf = malloc(bufsize);
 
@@ -851,11 +851,13 @@ char *editorPrompt(char *prompt) {
             if (buflen != 0) buf[--buflen] = '\0'; // remove last char from buf
         } else if (c == '\x1b') { // escape key
             editorSetStatusMessage(""); // clear status message
+            if (callback) callback(buf, c); // call callback function
             free(buf);
             return NULL;
         } else if (c == '\r') { // enter key
             if (buflen != 0) {
                 editorSetStatusMessage("");
+                if (callback) callback(buf, c); // call callback function
                 return buf;
             }
         } else if (!iscntrl(c) && c < 128) { // if c is not a control character and is less than 128
@@ -866,6 +868,8 @@ char *editorPrompt(char *prompt) {
             buf[buflen++] = c;
             buf[buflen] = '\0'; // null terminate string
         }
+
+        if (callback) callback(buf, c); // call callback function
     }
 }
 
