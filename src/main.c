@@ -338,6 +338,19 @@ int getWindowSize(int *rows, int *cols) {
  * 
  * if it’s a tab we use rx % KILO_TAB_STOP to find out how many columns we are to the right of the last tab stop,
  * and then subtract that from KILO_TAB_STOP - 1 to find out how many columns we are to the left of the next tab stop.
+ * 
+ * Why rx % TAB_STOP?
+ * 
+ * In TAB_STOP = 4,
+ *     ↓   ↓
+ * a►--b►--c
+ * dd►-ee►-ff
+ * ggg►hhh►iii
+ * 
+ * a   b   c
+ * dd  ee  ff
+ * ggg hhh iii
+ * https://vi.stackexchange.com/questions/3973/why-are-tab-characters-variable-width
 */
 int editorRowCxToRx(erow *row, int cx) {
     int rx = 0;
