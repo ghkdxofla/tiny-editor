@@ -740,7 +740,17 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
             int len = E.row[filerow].rsize - E.coloff;
             if (len < 0) len = 0; // truncate row if it is too short
             if (len > E.screencols) len = E.screencols; // truncate row if it is too long
-            abAppend(ab, &E.row[filerow].render[E.coloff], len);
+            char *c = &E.row[filerow].render[E.coloff];
+            int j;
+            for (j = 0; j < len; j++) {
+                if (isdigit(c[j])) {
+                    abAppend(ab, "\x1b[31m", 5); // set color to red
+                    abAppend(ab, &c[j], 1);
+                    abAppend(ab, "\x1b[39m", 5); // reset color
+                } else {
+                    abAppend(ab, &c[j], 1);
+                }
+            }
         }
 
         /**
