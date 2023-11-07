@@ -49,7 +49,8 @@ enum editorKey {
 
 enum editorHighlight {
     HL_NORMAL = 0,
-    HL_NUMBER
+    HL_NUMBER,
+    HL_MATCH
 };
 
 /*** data ***/
@@ -354,6 +355,7 @@ void editorUpdateSyntax(erow *row) {
 int editorSyntaxToColor(int hl) {
     switch (hl) {
         case HL_NUMBER: return 31; // red
+        case HL_MATCH: return 34; // blue
         default: return 37; // white
     }
 }
@@ -667,8 +669,15 @@ void editorFindCallback(char *query, int key) {
         if (match) {
             last_match = current;
             E.cy = current;
+            /**
+             * match - row->render?
+             * match도 pointer고 row->render도 pointer라서 빼면 그 사이의 거리가 나온다.
+             * 그 거리가 cursor position이다.
+            */
             E.cx = editorRowRxToCx(row, match - row->render); // set cursor position to beginning of match
             E.rowoff = E.numrows; // scroll to bottom of file
+
+            memset(&row->hl[match - row->render], HL_MATCH, strlen(query)); // highlight match
             break;
         }
     }
