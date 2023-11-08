@@ -643,6 +643,15 @@ void editorFindCallback(char *query, int key) {
     static int last_match = -1;
     static int direction = 1; // 1 for forward, -1 for backward
 
+    static int saved_hl_line;
+    static char *saved_hl = NULL;
+
+    if (saved_hl) {
+        memcpy(E.row[saved_hl_line].hl, saved_hl, E.row[saved_hl_line].rsize); // restore saved highlight
+        free(saved_hl);
+        saved_hl = NULL;
+    }
+
     if (key == '\r' || key == '\x1b') { // if enter or escape is pressed
         last_match = -1;
         direction = 1;
@@ -676,6 +685,10 @@ void editorFindCallback(char *query, int key) {
             */
             E.cx = editorRowRxToCx(row, match - row->render); // set cursor position to beginning of match
             E.rowoff = E.numrows; // scroll to bottom of file
+
+            saved_hl_line = current;
+            saved_hl = malloc(row->rsize); // allocate memory for saved highlight
+            memcpy(saved_hl, row->hl, row->rsize); // save current highlight
 
             memset(&row->hl[match - row->render], HL_MATCH, strlen(query)); // highlight match
             break;
