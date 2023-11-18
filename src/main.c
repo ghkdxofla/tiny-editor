@@ -340,15 +340,35 @@ int getWindowSize(int *rows, int *cols) {
 
 /*** syntax highlighting ***/
 
+int is_seperator(int c) {
+    /**
+     * '\0' is the null character.
+     * It can count the null byte at the end of each line as a separator.
+    */
+    return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != NULL; // strchr() returns a pointer to the first occurrence of c in the string
+}
+
 void editorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize); // allocate memory for highlight array
     memset(row->hl, HL_NORMAL, row->rsize); // memset() fills the first n bytes of the memory area pointed to by row->hl with the constant byte HL_NORMAL
 
-    int i;
-    for (i = 0; i < row->rsize; i++) {
-        if (isdigit(row->render[i])) {
+    int prev_sep = 1; // previous separator; 1 if previous character is a separator, 0 otherwise. we consider the beginning of the line to be a separator. (Otherwise numbers at the very beginning of the line wouldn’t be highlighted.)
+
+    int i = 0;
+    while (i < row->rsize) {
+        char c = row->render[i];
+        unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL; // previous highlight
+
+        if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) || 
+            (c == '.' && prev_hl == HL_NUMBER)) { // if c is a digit and previous character is a separator or previous character is a number, or if c is a decimal point and previous character is a number
             row->hl[i] = HL_NUMBER; // highlight numbers
+            i++;
+            prev_sep = 0;
+            continue;
         }
+
+        prev_sep = is_seperator(c);
+        i++;
     }
 }
 
