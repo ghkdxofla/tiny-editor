@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 /*** defines ***/
+
 #define TINY_VERSION "0.0.1"
 #define TAB_STOP 8
 #define QUIT_TIMES 2
@@ -53,7 +54,15 @@ enum editorHighlight {
     HL_MATCH
 };
 
+#define HL_HIGHLIGHT_NUMBERS (1<<0) // 00000001
+
 /*** data ***/
+
+struct editorSyntax {
+    char *filetype; // file extension
+    char **filematch; // filename
+    int flags; // flags
+};
 
 typedef struct erow {
     int size;
@@ -76,12 +85,28 @@ struct editorConfig {
     char *filename; // filename
     char statusmsg[80]; // status message
     time_t statusmsg_time; // status message time
+    struct editorSyntax *syntax; // pointer to editorSyntax struct
     struct termios orig_termios;
 };
 
 struct editorConfig E;
 
+/*** filetypes ***/
+
+char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL }; // NULL is used to mark the end of the array
+
+struct editorSyntax HLDB[] = {
+    {
+        "c",
+        C_HL_extensions,
+        HL_HIGHLIGHT_NUMBERS
+    },
+};
+
+#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0])) // number of elements in HLDB
+
 /*** prototypes ***/
+
 void editorSetStatusMessage(const char *fmt, ...);
 void editorRefreshScreen();
 char *editorPrompt(char *prompt, void (*callback)(char *, int));
@@ -352,19 +377,23 @@ void editorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize); // allocate memory for highlight array
     memset(row->hl, HL_NORMAL, row->rsize); // memset() fills the first n bytes of the memory area pointed to by row->hl with the constant byte HL_NORMAL
 
+    if (E.syntax == NULL) return; // if no syntax, return
+
     int prev_sep = 1; // previous separator; 1 if previous character is a separator, 0 otherwise. we consider the beginning of the line to be a separator. (Otherwise numbers at the very beginning of the line wouldn’t be highlighted.)
 
     int i = 0;
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL; // previous highlight
-
-        if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) || 
-            (c == '.' && prev_hl == HL_NUMBER)) { // if c is a digit and previous character is a separator or previous character is a number, or if c is a decimal point and previous character is a number
-            row->hl[i] = HL_NUMBER; // highlight numbers
-            i++;
-            prev_sep = 0;
-            continue;
+        
+        if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
+            if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) || 
+                (c == '.' && prev_hl == HL_NUMBER)) { // if c is a digit and previous character is a separator or previous character is a number, or if c is a decimal point and previous character is a number
+                row->hl[i] = HL_NUMBER; // highlight numbers
+                i++;
+                prev_sep = 0;
+                continue;
+            }
         }
 
         prev_sep = is_seperator(c);
@@ -857,7 +886,8 @@ void editorDrawStatusBar(struct abuf *ab) {
         E.filename ? E.filename : "[No Name]", E.numrows,
         E.dirty ? "(modified)" : ""
     );
-    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", E.cy + 1, E.numrows); // current row and total number of rows
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d", 
+        E.syntax ? E.syntax->filetype : "no ft", E.cy + 1, E.numrows); // current row and total number of rows and filetype
     if (len > E.screencols) len = E.screencols; // truncate status message if it is too long
     abAppend(ab, status, len);
 
@@ -1141,6 +1171,7 @@ void initEditor() {
     E.filename = NULL;
     E.statusmsg[0] = '\0'; // initialize status message to empty string
     E.statusmsg_time = 0;
+    E.syntax = NULL; // initialize syntax highlighting to NULL. There is no filetype for the current file
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
     E.screenrows -= 2; // make room for status bar and message bar
