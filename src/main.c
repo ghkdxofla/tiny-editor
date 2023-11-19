@@ -50,6 +50,7 @@ enum editorKey {
 
 enum editorHighlight {
     HL_NORMAL = 0,
+    HL_COMMENT,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -63,6 +64,7 @@ enum editorHighlight {
 struct editorSyntax {
     char *filetype; // file extension
     char **filematch; // filename
+    char *singleline_comment_start; // single line comment start
     int flags; // flags
 };
 
@@ -101,6 +103,7 @@ struct editorSyntax HLDB[] = {
     {
         "c",
         C_HL_extensions,
+        "//", // single line comment start
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
     },
 };
@@ -381,6 +384,9 @@ void editorUpdateSyntax(erow *row) {
 
     if (E.syntax == NULL) return; // if no syntax, return
 
+    char *scs = E.syntax->singleline_comment_start; // single line comment start
+    int scs_len = scs ? strlen(scs) : 0; // single line comment start length
+
     int prev_sep = 1; // previous separator; 1 if previous character is a separator, 0 otherwise. we consider the beginning of the line to be a separator. (Otherwise numbers at the very beginning of the line wouldn’t be highlighted.)
     int in_string = 0; // if in_string > 0 we are inside a string, 0 otherwise
 
@@ -388,6 +394,20 @@ void editorUpdateSyntax(erow *row) {
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL; // previous highlight
+
+        if (scs_len && !in_string) { // if single line comment start exists and we are not in a string
+            /**
+             * `strncmp()`
+             * strncmp() compares the first n bytes of s1 and s2.
+             * It returns an integer less than, equal to, or greater than zero if s1 is found, respectively, to be less than, to match, or be greater than s2.
+             * A positive value means that s1 would be after s2 in a dictionary.
+             * A negative value means that s1 would be before s2 in a dictionary.
+            */
+            if (!strncmp(&row->render[i], scs, scs_len)) { // strncmp() compares the first n bytes of row->render[i] and scs
+                memset(&row->hl[i], HL_COMMENT, row->rsize - i); // highlight comment
+                break;
+            }
+        }
         
         if (E.syntax->flags * HL_HIGHLIGHT_STRINGS) {
             if (in_string) {
@@ -428,6 +448,7 @@ void editorUpdateSyntax(erow *row) {
 
 int editorSyntaxToColor(int hl) {
     switch (hl) {
+        case HL_COMMENT: return 36; // cyan
         case HL_STRING: return 35; // magenta
         case HL_NUMBER: return 31; // red
         case HL_MATCH: return 34; // blue
