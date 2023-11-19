@@ -966,7 +966,21 @@ void editorDrawRows(struct abuf *ab) { // draw each row of the buffer to the scr
             int current_color = -1;
             int j;
             for (j = 0; j < len; j++) {
-                if (hl[j] == HL_NORMAL) {
+                if (iscntrl(c[j])) {
+                    /**
+                     * Why '@'?
+                     * In ASCII, the capital letters of the alphabet come after the @ character
+                    */
+                    char sym = (c[j] <= 26) ? '@' + c[j] : '?'; // replace non-printable characters with '?'
+                    abAppend(ab, "\x1b[7m", 4); // invert colors (7; Reverse Video)
+                    abAppend(ab, &sym, 1);
+                    abAppend(ab, "\x1b[m", 3); // reset colors (m; Turn Off Character Attributes)
+                    if (current_color != -1) {
+                        char buf[16];
+                        int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", current_color); // set color
+                        abAppend(ab, buf, clen);
+                    }
+                } else if (hl[j] == HL_NORMAL) {
                     if (current_color != -1) {
                         abAppend(ab, "\x1b[39m", 5); // reset color
                         current_color = -1;
