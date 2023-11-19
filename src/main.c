@@ -50,11 +50,13 @@ enum editorKey {
 
 enum editorHighlight {
     HL_NORMAL = 0,
+    HL_STRING,
     HL_NUMBER,
     HL_MATCH
 };
 
 #define HL_HIGHLIGHT_NUMBERS (1<<0) // 00000001
+#define HL_HIGHLIGHT_STRINGS (1<<1) // 00000010
 
 /*** data ***/
 
@@ -99,7 +101,7 @@ struct editorSyntax HLDB[] = {
     {
         "c",
         C_HL_extensions,
-        HL_HIGHLIGHT_NUMBERS
+        HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
     },
 };
 
@@ -380,11 +382,34 @@ void editorUpdateSyntax(erow *row) {
     if (E.syntax == NULL) return; // if no syntax, return
 
     int prev_sep = 1; // previous separator; 1 if previous character is a separator, 0 otherwise. we consider the beginning of the line to be a separator. (Otherwise numbers at the very beginning of the line wouldn’t be highlighted.)
+    int in_string = 0; // if in_string > 0 we are inside a string, 0 otherwise
 
     int i = 0;
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL; // previous highlight
+        
+        if (E.syntax->flags * HL_HIGHLIGHT_STRINGS) {
+            if (in_string) {
+                row->hl[i] = HL_STRING; // highlight string
+                if (c == '\\' && i + 1 < row->rsize) {
+                    row->hl[i + 1] = HL_STRING; // highlight escape character
+                    i += 2;
+                    continue;
+                }
+                if (c == in_string) in_string = 0; // if c is the same as in_string, set in_string to 0
+                i++;
+                prev_sep = 1;
+                continue;
+            } else {
+                if (c == '"' || c == '\'') { // if c is a double quote or single quote
+                    in_string = c; // set in_string to c
+                    row->hl[i] = HL_STRING; // highlight string
+                    i++;
+                    continue;
+                }
+            }
+        }
         
         if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
             if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) || 
@@ -403,6 +428,7 @@ void editorUpdateSyntax(erow *row) {
 
 int editorSyntaxToColor(int hl) {
     switch (hl) {
+        case HL_STRING: return 35; // magenta
         case HL_NUMBER: return 31; // red
         case HL_MATCH: return 34; // blue
         default: return 37; // white
@@ -435,7 +461,7 @@ void editorSelectSyntaxHighlight() {
                 for (filerow = 0; filerow < E.numrows; filerow++) {
                     editorUpdateSyntax(&E.row[filerow]);
                 }
-                
+
                 return;
             }
             i++;
