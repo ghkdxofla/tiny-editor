@@ -1,6 +1,13 @@
 # tiny-editor
 ![image](https://github.com/ghkdxofla/tiny-editor/assets/26355065/bbaa4184-eab2-496e-95c9-b78c15752eb0)
 
+## Keys
+```
+Ctrl-S: save
+Ctrl-Q: quit
+Ctrl-F: find
+```
+
 ## Compile
 ```bash
 cd src
