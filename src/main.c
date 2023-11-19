@@ -409,6 +409,40 @@ int editorSyntaxToColor(int hl) {
     }
 }
 
+void editorSelectSyntaxHighlight() {
+    E.syntax = NULL;
+    if (E.filename == NULL) return; // if no filename, return
+
+    char *ext = strrchr(E.filename, '.'); // strrchr() returns a pointer to the last occurrence of the character '.' in the string E.filename. If no match is found, then NULL is returned.
+
+    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
+        struct editorSyntax *s = &HLDB[j];
+        unsigned int i = 0;
+        while (s->filematch[i]) {
+            int is_ext = (s->filematch[i][0] == '.');
+            /**
+             * `strcmp()`
+             * strcmp() compares the two strings s1 and s2.
+             * It returns an integer less than, equal to, or greater than zero if s1 is found, respectively, to be less than, to match, or be greater than s2.
+             * A positive value means that s1 would be after s2 in a dictionary.
+             * A negative value means that s1 would be before s2 in a dictionary.
+            */
+            if ((is_ext && ext && !strcmp(ext, s->filematch[i])) || // strcmp() returns 0 if the strings are equal. In C, 0 is false, and any other integer is true.
+                (!is_ext && strstr(E.filename, s->filematch[i]))) { // strstr() returns a pointer to the first occurrence of s->filematch[i] in E.filename
+                E.syntax = s;
+
+                int filerow;
+                for (filerow = 0; filerow < E.numrows; filerow++) {
+                    editorUpdateSyntax(&E.row[filerow]);
+                }
+                
+                return;
+            }
+            i++;
+        }
+    }
+}
+
 /*** row operations ***/
 
 /**
@@ -615,6 +649,8 @@ void editorOpen(char *filename) {
     free(E.filename);
     E.filename = strdup(filename); // strdup() returns a pointer to a new string which is a duplicate of the string s.
 
+    editorSelectSyntaxHighlight();
+
     FILE *fp = fopen(filename, "r"); // open file in read mode
     if (!fp) die("fopen");
 
@@ -643,6 +679,7 @@ void editorSave() {
             editorSetStatusMessage("Save aborted");
             return;
         }
+        editorSelectSyntaxHighlight();
     }
 
     int len;
