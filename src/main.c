@@ -51,6 +51,7 @@ enum editorKey {
 enum editorHighlight {
     HL_NORMAL = 0,
     HL_COMMENT,
+    HL_MLCOMMENT, // multi line comment
     HL_KEYWORD1,
     HL_KEYWORD2,
     HL_STRING,
@@ -68,15 +69,19 @@ struct editorSyntax {
     char **filematch; // filename
     char **keywords; // keywords
     char *singleline_comment_start; // single line comment start
+    char *multiline_comment_start; // multi line comment start
+    char *multiline_comment_end; // multi line comment end
     int flags; // flags
 };
 
 typedef struct erow {
+    int idx; // index
     int size;
     int rsize; // render size
     char *chars;
     char *render; // render string
     unsigned char *hl; // highlight
+    int hl_open_comment; // highlight open comment
 } erow;
 
 struct editorConfig {
@@ -115,6 +120,8 @@ struct editorSyntax HLDB[] = {
         C_HL_extensions,
         C_HL_keywords,
         "//", // single line comment start
+        "/*", // multi line comment start
+        "*/", // multi line comment end
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
     },
 };
@@ -398,17 +405,23 @@ void editorUpdateSyntax(erow *row) {
     char **keywords = E.syntax->keywords; // keywords
 
     char *scs = E.syntax->singleline_comment_start; // single line comment start
-    int scs_len = scs ? strlen(scs) : 0; // single line comment start length
+    char *mcs = E.syntax->multiline_comment_start; // multi line comment start
+    char *mce = E.syntax->multiline_comment_end; // multi line comment end
 
+    int scs_len = scs ? strlen(scs) : 0; // single line comment start length
+    int mcs_len = mcs ? strlen(mcs) : 0; // multi line comment start length
+    int mce_len = mce ? strlen(mce) : 0; // multi line comment end length
+    
     int prev_sep = 1; // previous separator; 1 if previous character is a separator, 0 otherwise. we consider the beginning of the line to be a separator. (Otherwise numbers at the very beginning of the line wouldn’t be highlighted.)
     int in_string = 0; // if in_string > 0 we are inside a string, 0 otherwise
+    int in_comment = (row->idx > 0 && E.row[row->idx - 1].hl_open_comment); // if in_comment > 0, we are inside a multi line comment, 0 otherwise (if previous row is a multi line comment
 
     int i = 0;
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL; // previous highlight
 
-        if (scs_len && !in_string) { // if single line comment start exists and we are not in a string
+        if (scs_len && !in_string && !in_comment) { // if single line comment start exists and we are not in a string
             /**
              * `strncmp()`
              * strncmp() compares the first n bytes of s1 and s2.
@@ -419,6 +432,27 @@ void editorUpdateSyntax(erow *row) {
             if (!strncmp(&row->render[i], scs, scs_len)) { // strncmp() compares the first n bytes of row->render[i] and scs
                 memset(&row->hl[i], HL_COMMENT, row->rsize - i); // highlight comment
                 break;
+            }
+        }
+
+        if (mcs_len && mce_len && !in_string) {
+            if (in_comment) { // if in_comment > 0, we are inside a multi line comment
+                row->hl[i] = HL_MLCOMMENT; // highlight multi line comment
+                if (!strncmp(&row->render[i], mce, mce_len)) { // strncmp() compares the first n bytes of row->render[i] and mce
+                    memset(&row->hl[i], HL_MLCOMMENT, mce_len); // highlight multi line comment
+                    i += mce_len;
+                    in_comment = 0;
+                    prev_sep = 1;
+                    continue;
+                } else {
+                    i++;
+                    continue;
+                }
+            } else if (!strncmp(&row->render[i], mcs, mcs_len)) { // strncmp() compares the first n bytes of row->render[i] and mcs
+                memset(&row->hl[i], HL_MLCOMMENT, mcs_len); // highlight multi line comment
+                i += mcs_len;
+                in_comment = 1;
+                continue;
             }
         }
         
@@ -477,11 +511,16 @@ void editorUpdateSyntax(erow *row) {
         prev_sep = is_seperator(c);
         i++;
     }
+
+    int changed = (row->hl_open_comment != in_comment); // 1 if row->hl_open_comment != in_comment, 0 otherwise
+    row->hl_open_comment = in_comment; // set row->hl_open_comment to in_comment
+    if (changed && row->idx + 1 < E.numrows) editorUpdateSyntax(&E.row[row->idx + 1]); // if changed and row->idx + 1 < E.numrows, update syntax of next row
 }
 
 int editorSyntaxToColor(int hl) {
     switch (hl) {
-        case HL_COMMENT: return 36; // cyan
+        case HL_COMMENT: 
+        case HL_MLCOMMENT: return 36; // cyan
         case HL_KEYWORD1: return 33; // yellow
         case HL_KEYWORD2: return 32; // green
         case HL_STRING: return 35; // magenta
@@ -603,7 +642,10 @@ void editorInsertRow(int at, char *s, size_t len) {
 
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1)); // allocate memory for new row
     memmove(&E.row[at + 1], &E.row[at], sizeof(erow) * (E.numrows - at)); // move rows after at to the right by 1 (memmove() is like memcpy() but it works even if the memory regions overlap
-    
+    for (int j = at + 1; j <= E.numrows; j++) E.row[j].idx++; // increment idx of rows after at by 1
+
+    E.row[at].idx = at;
+
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
@@ -612,6 +654,7 @@ void editorInsertRow(int at, char *s, size_t len) {
     E.row[at].rsize = 0;
     E.row[at].render = NULL;
     E.row[at].hl = NULL;
+    E.row[at].hl_open_comment = 0;
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
@@ -628,6 +671,7 @@ void editorDelRow(int at) {
     if (at < 0 || at >= E.numrows) return; // if at is out of bounds, return
     editorFreeRow(&E.row[at]);
     memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1)); // move rows after at to the left by 1
+    for (int j = at; j < E.numrows; j++) E.row[j].idx--; // decrement idx of rows after at by 1
     E.numrows--;
     E.dirty++;
 }
