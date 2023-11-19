@@ -51,6 +51,8 @@ enum editorKey {
 enum editorHighlight {
     HL_NORMAL = 0,
     HL_COMMENT,
+    HL_KEYWORD1,
+    HL_KEYWORD2,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -64,6 +66,7 @@ enum editorHighlight {
 struct editorSyntax {
     char *filetype; // file extension
     char **filematch; // filename
+    char **keywords; // keywords
     char *singleline_comment_start; // single line comment start
     int flags; // flags
 };
@@ -98,11 +101,19 @@ struct editorConfig E;
 /*** filetypes ***/
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL }; // NULL is used to mark the end of the array
+char *C_HL_keywords[] = {
+    "switch", "if", "while", "for", "break", "continue", "return", "else",
+    "struct", "union", "typedef", "static", "enum", "class", "case",
+
+    "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+    "void|", NULL
+}
 
 struct editorSyntax HLDB[] = {
     {
         "c",
         C_HL_extensions,
+        C_HL_keywords,
         "//", // single line comment start
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS
     },
@@ -384,6 +395,8 @@ void editorUpdateSyntax(erow *row) {
 
     if (E.syntax == NULL) return; // if no syntax, return
 
+    char **keywords = E.syntax->keywords; // keywords
+
     char *scs = E.syntax->singleline_comment_start; // single line comment start
     int scs_len = scs ? strlen(scs) : 0; // single line comment start length
 
@@ -441,6 +454,26 @@ void editorUpdateSyntax(erow *row) {
             }
         }
 
+        if (prev_sep) { // if previous character is a separator
+            int j;
+            for (j = 0; keywords[j]; j++) {
+                int klen = strlen(keywords[j]); // keyword length
+                int kw2 = keywords[j][klen - 1] == '|'; // 1 if keyword ends with '|', 0 otherwise
+                if (kw2) klen--; // if keyword ends with '|', decrement keyword length
+
+                if (!strncmp(&row->render[i], keywords[j], klen) &&
+                    is_seperator(row->render[i + klen])) { // if keyword matches and next character is a separator
+                    memset(&row->hl[i], kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen); // highlight keyword
+                    i += klen;
+                    break;
+                }
+            }
+            if (keywords[j] != NULL) { // if keyword matches
+                prev_sep = 0;
+                continue;
+            }
+        }
+
         prev_sep = is_seperator(c);
         i++;
     }
@@ -449,6 +482,8 @@ void editorUpdateSyntax(erow *row) {
 int editorSyntaxToColor(int hl) {
     switch (hl) {
         case HL_COMMENT: return 36; // cyan
+        case HL_KEYWORD1: return 33; // yellow
+        case HL_KEYWORD2: return 32; // green
         case HL_STRING: return 35; // magenta
         case HL_NUMBER: return 31; // red
         case HL_MATCH: return 34; // blue
