@@ -10,7 +10,8 @@ Ctrl-F: find
 
 ## Compile
 ```bash
-cd src
+# C
+cd c/src
 make
 ```
 
