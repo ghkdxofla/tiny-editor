@@ -40,3 +40,5 @@ make
 - [Text Editor - Data Structures; Avery Laird](https://www.averylaird.com/programming/the%20text%20editor/2017/09/30/the-piece-table)
 - [Text Editor Data Structures; Cameron DaCamara](https://cdacamar.github.io/data%20structures/algorithms/benchmarking/text%20editors/c++/editor-data-structures/)
 - [Writing Text Editor; Tsoding Daily](https://youtu.be/2UY_Am-Q-oI)
+- [Build Your Text Editor With Rust!](https://medium.com/@otukof/build-your-text-editor-with-rust-678a463f968b)
+- [Hecto: Build your own text editor in Rust](https://www.flenker.blog/hecto/)
