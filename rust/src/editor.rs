@@ -24,7 +24,12 @@ impl Editor {
 
         let mut buf = [0; 1];
         while io::stdin().read(&mut buf).expect("read error") == 1 && buf != [b'q'] {
-            println!("read: {:?}", buf);
+            let character = buf[0] as char;
+            if character.is_control() {
+                println!("{}\r", character as u8);
+            } else {
+                println!("{}\r", character);
+            }
         }
 
         self.disable_raw_mode();
