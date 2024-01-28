@@ -1,7 +1,6 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{event, terminal};
-use std::io;
-use std::io::Read;
+use std::time::Duration;
 
 pub struct Editor;
 
@@ -28,15 +27,17 @@ impl Editor {
         self.enable_raw_mode();
         
         loop {
-            if let Event::Key(event) = event::read().expect("Failed to read line") {
-                match event {
-                    KeyEvent{
-                        code: KeyCode::Char('q'),
-                        modifiers: KeyModifiers::NONE,
-                        ..
-                    } => break,
-                    _ => {
+            if event::poll(Duration::from_millis(500)).expect("Error") {
+                if let Event::Key(event) = event::read().expect("Failed to read line") {
+                    match event {
+                        KeyEvent{
+                            code: KeyCode::Char('q'),
+                            modifiers: KeyModifiers::NONE,
+                            ..
+                        } => break,
+                        _ => {
 
+                        }
                     }
                 }
             }
