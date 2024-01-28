@@ -1,4 +1,5 @@
-use crossterm::terminal;
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::{event, terminal};
 use std::io;
 use std::io::Read;
 
@@ -6,7 +7,7 @@ pub struct Editor;
 
 /**
  * The Drop trait is used to run some code when a value goes out of scope.
- * See https://rinthel.github.io/rust-lang-book-ko/ch15-03-drop.html
+ * See https://doc.rust-kr.org/ch15-03-drop.html
  */
 impl Drop for Editor {
     fn drop(&mut self) {
@@ -19,16 +20,25 @@ impl Editor {
         Self
     }
 
+    /**
+     * if let is a syntax sugar for match that runs code when the value matches one pattern.
+     * See https://doc.rust-kr.org/ch06-03-if-let.html
+     */
     pub fn run(&self) {
         self.enable_raw_mode();
+        
+        loop {
+            if let Event::Key(event) = event::read().expect("Failed to read line") {
+                match event {
+                    KeyEvent{
+                        code: KeyCode::Char('q'),
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    } => break,
+                    _ => {
 
-        let mut buf = [0; 1];
-        while io::stdin().read(&mut buf).expect("read error") == 1 && buf != [b'q'] {
-            let character = buf[0] as char;
-            if character.is_control() {
-                println!("{}\r", character as u8);
-            } else {
-                println!("{}\r", character);
+                    }
+                }
             }
         }
 
