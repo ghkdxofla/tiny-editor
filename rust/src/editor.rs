@@ -23,12 +23,12 @@ impl Editor {
      * if let is a syntax sugar for match that runs code when the value matches one pattern.
      * See https://doc.rust-kr.org/ch06-03-if-let.html
      */
-    pub fn run(&self) {
+    pub fn run(&self) -> std::io::Result<()> {
         self.enable_raw_mode();
         
         loop {
-            if event::poll(Duration::from_millis(500)).expect("Error") {
-                if let Event::Key(event) = event::read().expect("Failed to read line") {
+            if event::poll(Duration::from_millis(500))? {
+                if let Event::Key(event) = event::read()? {
                     match event {
                         KeyEvent{
                             code: KeyCode::Char('q'),
@@ -44,6 +44,7 @@ impl Editor {
         }
 
         self.disable_raw_mode();
+        Ok(())
     }
 
     fn enable_raw_mode(&self) {
