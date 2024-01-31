@@ -1,8 +1,6 @@
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::{event, terminal};
-use std::time::Duration;
-
-use reader::Reader;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::terminal;
+use crate::reader::Reader;
 
 pub struct Editor {
     reader: Reader
@@ -37,7 +35,7 @@ impl Editor {
      * if let is a syntax sugar for match that runs code when the value matches one pattern.
      * See https://doc.rust-kr.org/ch06-03-if-let.html
      */
-    pub fn run(&self) -> std::io::Result<()> {
+    pub fn run(&self) -> std::io::Result<bool> {
         self.process_keypress()
     }
 
@@ -50,6 +48,6 @@ impl Editor {
             } => return Ok(false),
             _ => {}
         }
-        return Ok(true);
+        Ok(true)
     }
 }
