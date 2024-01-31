@@ -2,7 +2,11 @@ use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{event, terminal};
 use std::time::Duration;
 
-pub struct Editor;
+use reader::Reader;
+
+pub struct Editor {
+    reader: Reader
+}
 
 /**
  * The Drop trait is used to run some code when a value goes out of scope.
@@ -16,7 +20,17 @@ impl Drop for Editor {
 
 impl Editor {
     pub fn new() -> Self {
-        Self
+        Self {
+            reader: Reader
+        }
+    }
+
+    pub fn enable_raw_mode(&self) {
+        terminal::enable_raw_mode().expect("enable_raw_mode error");
+    }
+
+    pub fn disable_raw_mode(&self) {
+        terminal::disable_raw_mode().expect("disable_raw_mode error");
     }
 
     /**
@@ -24,34 +38,18 @@ impl Editor {
      * See https://doc.rust-kr.org/ch06-03-if-let.html
      */
     pub fn run(&self) -> std::io::Result<()> {
-        self.enable_raw_mode();
-        
-        loop {
-            if event::poll(Duration::from_millis(500))? {
-                if let Event::Key(event) = event::read()? {
-                    match event {
-                        KeyEvent{
-                            code: KeyCode::Char('q'),
-                            modifiers: KeyModifiers::NONE,
-                            ..
-                        } => break,
-                        _ => {
+        self.process_keypress()
+    }
 
-                        }
-                    }
-                }
-            }
+    fn process_keypress(&self) -> std::io::Result<bool> {
+        match self.reader.read_key()? {
+            KeyEvent{
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::NONE,
+                ..
+            } => return Ok(false),
+            _ => {}
         }
-
-        self.disable_raw_mode();
-        Ok(())
-    }
-
-    fn enable_raw_mode(&self) {
-        terminal::enable_raw_mode().expect("enable_raw_mode error");
-    }
-
-    fn disable_raw_mode(&self) {
-        terminal::disable_raw_mode().expect("disable_raw_mode error");
+        return Ok(true);
     }
 }
