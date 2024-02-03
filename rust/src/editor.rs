@@ -1,6 +1,8 @@
+mod reader;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal;
-use crate::reader::Reader;
+use reader::Reader;
 
 pub struct Editor {
     reader: Reader

@@ -1,5 +1,4 @@
 mod editor;
-mod reader;
 
 use std::env;
 use editor::Editor;
