@@ -9,7 +9,7 @@ impl Output {
         Self
     }
 
-    pub fn clear_screen(&self) -> std::io::Result<()> {
+    pub fn clear_screen() -> std::io::Result<()> {
         execute!(stdout(), Clear(ClearType::All))
     }
 

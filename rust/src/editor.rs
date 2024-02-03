@@ -1,11 +1,14 @@
 mod reader;
+mod output;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal;
 use reader::Reader;
+use output::Output;
 
 pub struct Editor {
-    reader: Reader
+    reader: Reader,
+    output: Output,
 }
 
 /**
@@ -21,7 +24,8 @@ impl Drop for Editor {
 impl Editor {
     pub fn new() -> Self {
         Self {
-            reader: Reader
+            reader: Reader,
+            output: Output::new(),
         }
     }
 
@@ -38,6 +42,7 @@ impl Editor {
      * See https://doc.rust-kr.org/ch06-03-if-let.html
      */
     pub fn run(&self) -> std::io::Result<bool> {
+        self.output.refresh_screen()?;
         self.process_keypress()
     }
 
