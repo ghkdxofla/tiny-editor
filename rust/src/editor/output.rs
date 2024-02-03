@@ -10,10 +10,16 @@ impl Output {
     }
 
     pub fn clear_screen() -> std::io::Result<()> {
-        execute!(stdout(), Clear(ClearType::All))
+        execute!(stdout(), Clear(ClearType::All))?;
+        execute!(stdout(), crossterm::cursor::MoveTo(0, 0))
+    }
+
+    pub fn draw_rows(&self) -> std::io::Result<()> {
+        Self::clear_screen()
     }
 
     pub fn refresh_screen(&self) -> std::io::Result<()> {
-        Self::clear_screen()
+        Self::clear_screen()?;
+        Self::draw_rows(&self)
     }
 }

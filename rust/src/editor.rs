@@ -18,6 +18,7 @@ pub struct Editor {
 impl Drop for Editor {
     fn drop(&mut self) {
         self.disable_raw_mode();
+        Output::clear_screen().expect("clear_screen error");
     }
 }
 
