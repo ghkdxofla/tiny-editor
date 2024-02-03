@@ -50,7 +50,7 @@ impl Editor {
         match self.reader.read_key()? {
             KeyEvent{
                 code: KeyCode::Char('q'),
-                modifiers: KeyModifiers::NONE,
+                modifiers: KeyModifiers::CONTROL,
                 ..
             } => return Ok(false),
             _ => {}
