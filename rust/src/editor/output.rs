@@ -14,12 +14,16 @@ impl Output {
         execute!(stdout(), crossterm::cursor::MoveTo(0, 0))
     }
 
+    // pub fn scroll() -> std::io::Result<()> {
+
+    // }
+
     pub fn draw_rows(&self) -> std::io::Result<()> {
         Self::clear_screen()
     }
 
     pub fn refresh_screen(&self) -> std::io::Result<()> {
         Self::clear_screen()?;
-        Self::draw_rows(&self)
+        self.draw_rows()
     }
 }
